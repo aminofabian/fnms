@@ -1,0 +1,23 @@
+{
+  "name": "FnM's Mini Mart",
+  "short_name": "FnM's Mart",
+  "description": "Fresh groceries, everyday essentials, and more—all delivered to your door.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#9ACD32",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml"
+    }
+  ]
+}
