@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     }
 
     const order = rows[0] as Record<string, unknown>;
-    const orderId = order.id;
+    const orderId = Number(order.id);
 
     const { rows: itemRows } = await db.execute({
       sql: `SELECT name, quantity, unit_price_cents, price_cents
