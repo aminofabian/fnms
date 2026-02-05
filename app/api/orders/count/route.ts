@@ -16,7 +16,7 @@ export async function GET() {
       args: [session.user.id],
     });
 
-    const count = Number((rows[0] as { count: number }).count ?? 0);
+    const count = Number((rows[0] as unknown as { count: number }).count ?? 0);
     return NextResponse.json({ count });
   } catch (e) {
     console.error("Order count error:", e);

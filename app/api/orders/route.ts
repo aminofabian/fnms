@@ -113,7 +113,7 @@ export async function POST(request: Request) {
         sql: "SELECT COUNT(*) as count FROM orders WHERE user_id = ?",
         args: [session.user.id],
       });
-      const orderCount = Number((countRows[0] as { count: number }).count ?? 0);
+      const orderCount = Number((countRows[0] as unknown as { count: number }).count ?? 0);
       if (orderCount === 0) {
         return NextResponse.json(
           { error: "Cash on delivery is available from your second order. Please pay with M-Pesa for your first order." },
