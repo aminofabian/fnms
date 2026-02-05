@@ -3,7 +3,7 @@ import Image from "next/image";
 import { db } from "@/lib/db";
 import { Header } from "@/components/layout/header";
 import { TopSellersSidebar } from "@/components/home/top-sellers-sidebar";
-import { ProductGrid } from "@/components/home/product-grid";
+import { ProductFilterBar } from "@/components/home/product-filter-bar";
 import { DealsCarousel } from "../../components/home/deals-carousel";
 import { CartFooterBar } from "../../components/layout/cart-footer-bar";
 import type { Category } from "@/types/category";
@@ -125,7 +125,7 @@ export default async function HomePage() {
           )}
 
           <section aria-label="Products">
-            <ProductGrid products={products} />
+            <ProductFilterBar products={products} categories={categories} />
           </section>
         </div>
       </main>
