@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 
 // DELETE /api/products/[slug]/images/[imageId] - Remove image from product
@@ -36,7 +35,6 @@ export async function DELETE(
       args: [id],
     });
 
-    revalidatePath(`/products/${slug}`);
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error("Product image DELETE error:", e);

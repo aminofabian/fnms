@@ -90,14 +90,6 @@ export default async function HomePage() {
     <>
       <Header />
       <main className="min-h-screen pb-20">
-        {/* Green strip above hero */}
-        <div
-          className="px-4 py-2.5 text-center text-sm font-semibold uppercase tracking-wide text-white"
-          style={{ backgroundColor: "var(--nav-green)" }}
-        >
-          Shop FnM&apos;s — Fresh for less every day
-        </div>
-
         {/* Sidebar right next to banner image */}
         <div className="flex flex-col border-b border-black/10 bg-muted lg:flex-row lg:justify-center">
           {categories.length > 0 && (

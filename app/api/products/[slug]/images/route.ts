@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 
 // POST /api/products/[slug]/images - Add image to product
@@ -36,7 +35,6 @@ export async function POST(
     });
 
     const r = inserted[0] as Record<string, unknown>;
-    revalidatePath(`/products/${slug}`);
     return NextResponse.json({
       id: Number(r.id),
       productId: Number(r.product_id),
