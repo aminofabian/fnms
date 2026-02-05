@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     Sparkles,
     Flame,
@@ -16,6 +16,7 @@ import {
     ChevronRight,
     ChevronsLeft,
     ChevronsRight,
+    Loader2,
 } from "lucide-react";
 import type { Product } from "@/types/product";
 import type { Category } from "@/types/category";
@@ -39,21 +40,41 @@ interface FilterButton {
     description?: string;
 }
 
+interface PaginationData {
+    currentPage: number;
+    totalPages: number;
+    totalProducts: number;
+    productsPerPage: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+}
+
 interface ProductFilterBarProps {
-    products: Product[];
+    initialProducts: Product[];
     categories: Category[];
+    initialPagination?: PaginationData;
 }
 
 export function ProductFilterBar({
-    products,
+    initialProducts,
     categories,
+    initialPagination,
 }: ProductFilterBarProps) {
     const [activeFilter, setActiveFilter] = useState<FilterType>("all");
-    const [gridSize, setGridSize] = useState<"compact" | "comfortable">(
-        "comfortable"
-    );
+    const [gridSize, setGridSize] = useState<"compact" | "comfortable">("comfortable");
     const [currentPage, setCurrentPage] = useState(1);
-    const PRODUCTS_PER_PAGE = 40;
+    const [products, setProducts] = useState<Product[]>(initialProducts);
+    const [pagination, setPagination] = useState<PaginationData>(
+        initialPagination || {
+            currentPage: 1,
+            totalPages: 1,
+            totalProducts: initialProducts.length,
+            productsPerPage: 40,
+            hasNextPage: false,
+            hasPrevPage: false,
+        }
+    );
+    const [isLoading, setIsLoading] = useState(false);
 
     // Base filter buttons
     const baseFilters: FilterButton[] = [
@@ -144,59 +165,54 @@ export function ProductFilterBar({
 
     const allFilters = [...baseFilters, ...categoryFilters];
 
-    // Filter products based on active filter
-    const filteredProducts = useMemo(() => {
-        switch (activeFilter) {
-            case "all":
-                return products;
-            case "deals":
-                return products.filter(
-                    (p) => p.compareAtCents && p.compareAtCents > p.priceCents
-                );
-            case "new":
-                // Products created in last 7 days
-                const oneWeekAgo = new Date();
-                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-                return products.filter((p) => new Date(p.createdAt) >= oneWeekAgo);
-            case "popular":
-                // For now, just show products with discounts as "popular" - you can enhance this with real analytics
-                return products.filter(
-                    (p) =>
-                        p.compareAtCents && p.compareAtCents > p.priceCents
-                ).slice(0, 12);
-            case "inStock":
-                return products.filter((p) => p.stockQuantity > 0);
-            case "lowStock":
-                return products.filter(
-                    (p) => p.stockQuantity > 0 && p.stockQuantity <= 10
-                );
-            default:
-                // Category filter
-                const category = categories.find((c) => c.slug === activeFilter);
-                if (category) {
-                    return products.filter((p) => p.categoryId === category.id);
-                }
-                return products;
+    // Fetch products from API
+    const fetchProducts = useCallback(async (page: number, filter: FilterType) => {
+        setIsLoading(true);
+        try {
+            const params = new URLSearchParams({
+                page: page.toString(),
+                filter: filter,
+            });
+
+            // If filter is a category slug
+            const isBaseFilter = ["all", "deals", "new", "popular", "inStock", "lowStock"].includes(filter);
+            if (!isBaseFilter) {
+                params.set("filter", "all");
+                params.set("category", filter);
+            }
+
+            const response = await fetch(`/api/products/paginated?${params.toString()}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                setProducts(data.products);
+                setPagination(data.pagination);
+            }
+        } catch (error) {
+            console.error("Failed to fetch products:", error);
+        } finally {
+            setIsLoading(false);
         }
-    }, [products, categories, activeFilter]);
+    }, []);
+
+    // Fetch when filter or page changes
+    useEffect(() => {
+        fetchProducts(currentPage, activeFilter);
+    }, [currentPage, activeFilter, fetchProducts]);
 
     // Reset to page 1 when filter changes
-    useEffect(() => {
+    const handleFilterChange = (filter: FilterType) => {
+        setActiveFilter(filter);
         setCurrentPage(1);
-    }, [activeFilter]);
-
-    // Pagination calculations
-    const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
-    const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
-    const endIndex = startIndex + PRODUCTS_PER_PAGE;
-    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+    };
 
     const activeFilterData = allFilters.find((f) => f.id === activeFilter);
 
     // Generate page numbers to display
     const getPageNumbers = () => {
         const pages: (number | string)[] = [];
-        const showPages = 5; // Show 5 page buttons max
+        const showPages = 5;
+        const totalPages = pagination.totalPages;
 
         if (totalPages <= showPages) {
             for (let i = 1; i <= totalPages; i++) pages.push(i);
@@ -220,6 +236,9 @@ export function ProductFilterBar({
         return pages;
     };
 
+    const startIndex = (currentPage - 1) * pagination.productsPerPage + 1;
+    const endIndex = Math.min(currentPage * pagination.productsPerPage, pagination.totalProducts);
+
     return (
         <div className="space-y-6">
             {/* Filter Section Header */}
@@ -229,7 +248,7 @@ export function ProductFilterBar({
                         🛒 Shop Our Collection
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                        {filteredProducts.length} products available
+                        {pagination.totalProducts} products available
                         {activeFilter !== "all" && activeFilterData && (
                             <span className="ml-1">
                                 in <span className="font-medium">{activeFilterData.label}</span>
@@ -278,11 +297,12 @@ export function ProductFilterBar({
                         return (
                             <button
                                 key={filter.id}
-                                onClick={() => setActiveFilter(filter.id)}
+                                onClick={() => handleFilterChange(filter.id)}
+                                disabled={isLoading}
                                 className={`group relative flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-300 ease-out sm:px-5 sm:py-3 ${isActive
                                     ? "scale-[1.02] text-white shadow-lg"
                                     : "bg-white/90 text-foreground shadow-sm ring-1 ring-black/5 hover:scale-[1.01] hover:shadow-md hover:ring-black/10"
-                                    }`}
+                                    } ${isLoading ? "opacity-70 cursor-wait" : ""}`}
                                 style={{
                                     background: isActive
                                         ? `linear-gradient(135deg, var(--tw-gradient-stops))`
@@ -354,44 +374,55 @@ export function ProductFilterBar({
                 </div>
             )}
 
-            {/* Products Grid */}
-            <div
-                className={`transition-all duration-300 ${gridSize === "compact" ? "product-grid-compact" : ""
-                    }`}
-            >
-                {paginatedProducts.length > 0 ? (
-                    <ProductGrid products={paginatedProducts} />
-                ) : (
-                    <div className="flex flex-col items-center justify-center rounded-3xl bg-white/50 py-16 text-center shadow-inner">
-                        <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 text-white shadow-lg">
-                            <Package className="h-10 w-10" aria-hidden />
-                        </div>
-                        <h3 className="text-lg font-bold text-foreground">
-                            No Products Found
-                        </h3>
-                        <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-                            Try a different filter or check back soon for new arrivals!
-                        </p>
-                        <button
-                            onClick={() => setActiveFilter("all")}
-                            className="mt-4 rounded-full bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground shadow-md transition hover:opacity-90 active:scale-95"
-                        >
-                            View All Products
-                        </button>
+            {/* Loading Overlay */}
+            {isLoading && (
+                <div className="flex items-center justify-center py-8">
+                    <div className="flex items-center gap-3 rounded-2xl bg-white/90 px-6 py-4 shadow-lg ring-1 ring-black/5">
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        <span className="text-sm font-medium text-muted-foreground">Loading products...</span>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
+
+            {/* Products Grid */}
+            {!isLoading && (
+                <div
+                    className={`transition-all duration-300 ${gridSize === "compact" ? "product-grid-compact" : ""}`}
+                >
+                    {products.length > 0 ? (
+                        <ProductGrid products={products} />
+                    ) : (
+                        <div className="flex flex-col items-center justify-center rounded-3xl bg-white/50 py-16 text-center shadow-inner">
+                            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 text-white shadow-lg">
+                                <Package className="h-10 w-10" aria-hidden />
+                            </div>
+                            <h3 className="text-lg font-bold text-foreground">
+                                No Products Found
+                            </h3>
+                            <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+                                Try a different filter or check back soon for new arrivals!
+                            </p>
+                            <button
+                                onClick={() => handleFilterChange("all")}
+                                className="mt-4 rounded-full bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground shadow-md transition hover:opacity-90 active:scale-95"
+                            >
+                                View All Products
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Pagination Controls */}
-            {totalPages > 1 && (
+            {!isLoading && pagination.totalPages > 1 && (
                 <div className="flex flex-col items-center gap-4 pt-6">
                     {/* Page Info */}
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <span className="font-medium">
-                            Showing {startIndex + 1}-{Math.min(endIndex, filteredProducts.length)}
+                            Showing {startIndex}-{endIndex}
                         </span>
                         <span>of</span>
-                        <span className="font-bold text-foreground">{filteredProducts.length}</span>
+                        <span className="font-bold text-foreground">{pagination.totalProducts}</span>
                         <span>products</span>
                     </div>
 
@@ -400,7 +431,7 @@ export function ProductFilterBar({
                         {/* First Page */}
                         <button
                             onClick={() => setCurrentPage(1)}
-                            disabled={currentPage === 1}
+                            disabled={!pagination.hasPrevPage || isLoading}
                             className="group flex h-10 w-10 items-center justify-center rounded-xl bg-white/80 shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:bg-white hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-sm"
                             aria-label="First page"
                         >
@@ -410,7 +441,7 @@ export function ProductFilterBar({
                         {/* Previous Page */}
                         <button
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
+                            disabled={!pagination.hasPrevPage || isLoading}
                             className="group flex h-10 w-10 items-center justify-center rounded-xl bg-white/80 shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:bg-white hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-sm"
                             aria-label="Previous page"
                         >
@@ -424,6 +455,7 @@ export function ProductFilterBar({
                                     <button
                                         key={idx}
                                         onClick={() => setCurrentPage(page)}
+                                        disabled={isLoading}
                                         className={`relative flex h-10 w-10 items-center justify-center rounded-xl text-sm font-semibold transition-all duration-300 ${currentPage === page
                                                 ? "bg-gradient-to-br from-primary to-orange-600 text-white shadow-lg scale-105"
                                                 : "bg-white/80 text-foreground shadow-sm ring-1 ring-black/5 hover:bg-white hover:shadow-md hover:scale-[1.02]"
@@ -454,8 +486,8 @@ export function ProductFilterBar({
 
                         {/* Next Page */}
                         <button
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(p => Math.min(pagination.totalPages, p + 1))}
+                            disabled={!pagination.hasNextPage || isLoading}
                             className="group flex h-10 w-10 items-center justify-center rounded-xl bg-white/80 shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:bg-white hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-sm"
                             aria-label="Next page"
                         >
@@ -464,8 +496,8 @@ export function ProductFilterBar({
 
                         {/* Last Page */}
                         <button
-                            onClick={() => setCurrentPage(totalPages)}
-                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(pagination.totalPages)}
+                            disabled={!pagination.hasNextPage || isLoading}
                             className="group flex h-10 w-10 items-center justify-center rounded-xl bg-white/80 shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:bg-white hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-sm"
                             aria-label="Last page"
                         >
@@ -474,23 +506,24 @@ export function ProductFilterBar({
                     </div>
 
                     {/* Quick Jump */}
-                    {totalPages > 5 && (
+                    {pagination.totalPages > 5 && (
                         <div className="flex items-center gap-2 text-sm">
                             <span className="text-muted-foreground">Go to page:</span>
                             <input
                                 type="number"
                                 min={1}
-                                max={totalPages}
+                                max={pagination.totalPages}
                                 value={currentPage}
                                 onChange={(e) => {
                                     const page = parseInt(e.target.value);
-                                    if (page >= 1 && page <= totalPages) {
+                                    if (page >= 1 && page <= pagination.totalPages) {
                                         setCurrentPage(page);
                                     }
                                 }}
-                                className="w-16 rounded-lg bg-white/80 px-3 py-2 text-center text-sm font-medium shadow-sm ring-1 ring-black/5 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                disabled={isLoading}
+                                className="w-16 rounded-lg bg-white/80 px-3 py-2 text-center text-sm font-medium shadow-sm ring-1 ring-black/5 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
                             />
-                            <span className="text-muted-foreground">of {totalPages}</span>
+                            <span className="text-muted-foreground">of {pagination.totalPages}</span>
                         </div>
                     )}
                 </div>
@@ -498,30 +531,30 @@ export function ProductFilterBar({
 
             {/* Styling for compact grid */}
             <style jsx global>{`
-        .product-grid-compact .grid {
-          grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        }
-        @media (min-width: 640px) {
-          .product-grid-compact .grid {
-            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-          }
-        }
-        @media (min-width: 768px) {
-          .product-grid-compact .grid {
-            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-          }
-        }
-        @media (min-width: 1024px) {
-          .product-grid-compact .grid {
-            grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
-          }
-        }
-        @media (min-width: 1280px) {
-          .product-grid-compact .grid {
-            grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
-          }
-        }
-      `}</style>
+                .product-grid-compact .grid {
+                    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                }
+                @media (min-width: 640px) {
+                    .product-grid-compact .grid {
+                        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+                    }
+                }
+                @media (min-width: 768px) {
+                    .product-grid-compact .grid {
+                        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+                    }
+                }
+                @media (min-width: 1024px) {
+                    .product-grid-compact .grid {
+                        grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+                    }
+                }
+                @media (min-width: 1280px) {
+                    .product-grid-compact .grid {
+                        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+                    }
+                }
+            `}</style>
         </div>
     );
 }

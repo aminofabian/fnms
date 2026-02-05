@@ -125,7 +125,7 @@ export default async function HomePage() {
           )}
 
           <section aria-label="Products">
-            <ProductFilterBar products={products} categories={categories} />
+            <ProductFilterBar initialProducts={products} categories={categories} />
           </section>
         </div>
       </main>
