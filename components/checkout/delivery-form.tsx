@@ -3,16 +3,83 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useSession } from "next-auth/react";
+import { MapPin } from "lucide-react";
 import { deliverySchema, type DeliveryInput } from "@/lib/validations/checkout";
 import { useCheckoutStore } from "@/stores/checkout-store";
 import { useServiceAreaStore } from "@/stores/service-area-store";
 import type { ServiceArea } from "@/types/service-area";
+import type { DeliveryInfo } from "@/types/checkout";
+
+const LAST_DELIVERY_KEY = "fnms_last_delivery";
+
+/** Shape we persist to localStorage (matches DeliveryInfo) */
+function getStoredDelivery(): Partial<DeliveryInfo> | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(LAST_DELIVERY_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (parsed && typeof parsed.serviceAreaId === "number") {
+      return {
+        serviceAreaId: parsed.serviceAreaId,
+        recipientName: typeof parsed.recipientName === "string" ? parsed.recipientName : "",
+        recipientPhone: typeof parsed.recipientPhone === "string" ? parsed.recipientPhone : "",
+        deliveryAddress: typeof parsed.deliveryAddress === "string" ? parsed.deliveryAddress : "",
+        deliveryNotes: typeof parsed.deliveryNotes === "string" ? parsed.deliveryNotes : "",
+      };
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function setStoredDelivery(d: DeliveryInfo) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(LAST_DELIVERY_KEY, JSON.stringify(d));
+  } catch {
+    // ignore
+  }
+}
+
+/** Save delivery to user's saved addresses (create or update default). */
+async function saveDeliveryToAccount(data: DeliveryInfo): Promise<void> {
+  const res = await fetch("/api/user/addresses");
+  if (!res.ok) return;
+  const addresses = (await res.json()) as Array<{ id: number; isDefault?: boolean }>;
+  const payload = {
+    label: "Default",
+    recipientName: data.recipientName,
+    recipientPhone: data.recipientPhone,
+    serviceAreaId: data.serviceAreaId,
+    addressLine: data.deliveryAddress,
+    notes: data.deliveryNotes || undefined,
+    isDefault: true,
+  };
+  if (addresses.length > 0) {
+    const toUpdate = addresses.find((a) => a.isDefault) ?? addresses[0];
+    await fetch(`/api/user/addresses/${toUpdate.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } else {
+    await fetch("/api/user/addresses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  }
+}
 
 interface DeliveryFormProps {
   onNext: () => void;
 }
 
 export function DeliveryForm({ onNext }: DeliveryFormProps) {
+  const { data: session } = useSession();
   const { delivery, setDelivery } = useCheckoutStore();
   const { selectedArea, setSelectedArea } = useServiceAreaStore();
   const [areas, setAreas] = useState<ServiceArea[]>([]);
@@ -23,29 +90,114 @@ export function DeliveryForm({ onNext }: DeliveryFormProps) {
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<DeliveryInput>({
     resolver: zodResolver(deliverySchema),
     defaultValues: {
-      serviceAreaId: delivery?.serviceAreaId ?? selectedArea?.id ?? 0,
-      recipientName: delivery?.recipientName ?? "",
-      recipientPhone: delivery?.recipientPhone ?? "",
-      deliveryAddress: delivery?.deliveryAddress ?? "",
-      deliveryNotes: delivery?.deliveryNotes ?? "",
+      serviceAreaId: 0,
+      recipientName: "",
+      recipientPhone: "",
+      deliveryAddress: "",
+      deliveryNotes: "",
     },
   });
 
   const serviceAreaId = watch("serviceAreaId");
+  const showAreaButtons = areas.length > 0 && areas.length < 5;
 
+  // Fetch areas and compute prepopulation (store > default address > localStorage)
   useEffect(() => {
-    fetch("/api/service-areas")
-      .then((res) => res.json())
-      .then((data) => {
-        setAreas(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+    let cancelled = false;
+
+    async function load() {
+      const areasRes = await fetch("/api/service-areas").then((r) => r.json());
+      const areaList = Array.isArray(areasRes) ? areasRes as ServiceArea[] : [];
+      if (cancelled) return;
+      setAreas(areaList);
+
+      // 1) From checkout store (e.g. user went back from review)
+      if (delivery?.serviceAreaId && areaList.some((a) => a.id === delivery.serviceAreaId)) {
+        reset({
+          serviceAreaId: delivery.serviceAreaId,
+          recipientName: delivery.recipientName ?? "",
+          recipientPhone: delivery.recipientPhone ?? "",
+          deliveryAddress: delivery.deliveryAddress ?? "",
+          deliveryNotes: delivery.deliveryNotes ?? "",
+        });
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
+      // 2) Logged-in: try default saved address
+      if (session?.user) {
+        try {
+          const addrRes = await fetch("/api/user/addresses");
+          if (addrRes.ok) {
+            const addresses = (await addrRes.json()) as Array<{
+              serviceAreaId: number;
+              recipientName: string;
+              recipientPhone: string;
+              addressLine: string;
+              notes?: string | null;
+              isDefault?: boolean;
+            }>;
+            const defaultAddr = addresses.find((a) => a.isDefault) ?? addresses[0];
+            if (
+              defaultAddr &&
+              defaultAddr.serviceAreaId &&
+              areaList.some((a) => a.id === defaultAddr.serviceAreaId)
+            ) {
+              reset({
+                serviceAreaId: defaultAddr.serviceAreaId,
+                recipientName: defaultAddr.recipientName ?? "",
+                recipientPhone: defaultAddr.recipientPhone ?? "",
+                deliveryAddress: defaultAddr.addressLine ?? "",
+                deliveryNotes: defaultAddr.notes ?? "",
+              });
+              if (!cancelled) setLoading(false);
+              return;
+            }
+          }
+        } catch {
+          // fall through to localStorage
+        }
+      }
+
+      // 3) localStorage (last delivery)
+      const stored = getStoredDelivery();
+      if (
+        stored?.serviceAreaId &&
+        areaList.some((a) => a.id === stored.serviceAreaId)
+      ) {
+        reset({
+          serviceAreaId: stored.serviceAreaId,
+          recipientName: stored.recipientName ?? "",
+          recipientPhone: stored.recipientPhone ?? "",
+          deliveryAddress: stored.deliveryAddress ?? "",
+          deliveryNotes: stored.deliveryNotes ?? "",
+        });
+      } else {
+        // 4) At least set area from service area store if valid
+        const areaId = selectedArea?.id && areaList.some((a) => a.id === selectedArea.id)
+          ? selectedArea.id
+          : 0;
+        reset({
+          serviceAreaId: areaId,
+          recipientName: "",
+          recipientPhone: "",
+          deliveryAddress: "",
+          deliveryNotes: "",
+        });
+      }
+      if (!cancelled) setLoading(false);
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [delivery, session?.user, selectedArea?.id, reset]);
 
   useEffect(() => {
     if (serviceAreaId && serviceAreaId > 0) {
@@ -54,28 +206,63 @@ export function DeliveryForm({ onNext }: DeliveryFormProps) {
     }
   }, [serviceAreaId, areas, setSelectedArea]);
 
-  function onSubmit(data: DeliveryInput) {
+  async function onSubmit(data: DeliveryInput) {
     setDelivery(data);
+    setStoredDelivery(data);
+    if (session?.user) {
+      try {
+        await saveDeliveryToAccount(data);
+      } catch {
+        // Non-blocking; localStorage and store already updated
+      }
+    }
     onNext();
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground">
+        <label className="mb-3 block text-sm font-medium text-foreground">
           Delivery Area *
         </label>
-        <select
-          className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          {...register("serviceAreaId", { valueAsNumber: true })}
-        >
-          <option value={0}>Select your area</option>
-          {areas.map((area) => (
-            <option key={area.id} value={area.id}>
-              {area.name} – KES {(area.deliveryFeeCents / 100).toLocaleString()} delivery
-            </option>
-          ))}
-        </select>
+        {loading ? (
+          <div className="h-12 rounded-xl border border-border bg-muted/30 animate-pulse" />
+        ) : showAreaButtons ? (
+          <div className="grid gap-2 sm:grid-cols-2">
+            {areas.map((area) => {
+              const selected = serviceAreaId === area.id;
+              return (
+                <button
+                  key={area.id}
+                  type="button"
+                  onClick={() => setValue("serviceAreaId", area.id, { shouldValidate: true })}
+                  className={`rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition-all ${
+                    selected
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border bg-card text-foreground hover:border-primary/40"
+                  }`}
+                >
+                  <span className="block">{area.name}</span>
+                  <span className="text-muted-foreground">
+                    KES {(area.deliveryFeeCents / 100).toLocaleString()} delivery
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <select
+            className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            {...register("serviceAreaId", { valueAsNumber: true })}
+          >
+            <option value={0}>Select your area</option>
+            {areas.map((area) => (
+              <option key={area.id} value={area.id}>
+                {area.name} – KES {(area.deliveryFeeCents / 100).toLocaleString()} delivery
+              </option>
+            ))}
+          </select>
+        )}
         {errors.serviceAreaId && (
           <p className="mt-1 text-sm text-destructive">{errors.serviceAreaId.message}</p>
         )}
@@ -88,7 +275,7 @@ export function DeliveryForm({ onNext }: DeliveryFormProps) {
           </label>
           <input
             type="text"
-            className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="Full name"
             {...register("recipientName")}
           />
@@ -96,14 +283,13 @@ export function DeliveryForm({ onNext }: DeliveryFormProps) {
             <p className="mt-1 text-sm text-destructive">{errors.recipientName.message}</p>
           )}
         </div>
-
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
             Phone Number *
           </label>
           <input
             type="tel"
-            className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="0712345678"
             {...register("recipientPhone")}
           />
@@ -117,10 +303,22 @@ export function DeliveryForm({ onNext }: DeliveryFormProps) {
         <label className="mb-1 block text-sm font-medium text-foreground">
           Delivery Address *
         </label>
+        <div className="mb-2 rounded-xl border border-primary/20 bg-primary/5 p-3">
+          <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <MapPin className="h-4 w-4 shrink-0 text-primary" />
+            Help us find you
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Include: street or road name, building or apartment name/number, house number, floor or wing, and a nearby landmark (e.g. shop, school, church).
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground italic">
+            Example: Orange House, Apt 3B, 2nd floor, near City Mall
+          </p>
+        </div>
         <textarea
-          rows={2}
-          className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          placeholder="Building, street, landmarks..."
+          rows={3}
+          className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          placeholder="e.g. Juja Mall, Shop 12, 1st floor, next to Naivas"
           {...register("deliveryAddress")}
         />
         {errors.deliveryAddress && (
@@ -134,7 +332,7 @@ export function DeliveryForm({ onNext }: DeliveryFormProps) {
         </label>
         <textarea
           rows={2}
-          className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           placeholder="Any special instructions..."
           {...register("deliveryNotes")}
         />
@@ -143,7 +341,7 @@ export function DeliveryForm({ onNext }: DeliveryFormProps) {
       <button
         type="submit"
         disabled={isSubmitting || loading}
-        className="w-full rounded-md bg-primary px-4 py-3 font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+        className="w-full rounded-xl bg-primary px-4 py-3.5 font-semibold text-primary-foreground shadow-md hover:opacity-95 disabled:opacity-50"
       >
         Continue to Review
       </button>

@@ -1,13 +1,32 @@
 "use client";
 
 import { useEffect } from "react";
-import { Banknote, CreditCard, ChevronLeft, Mail, Loader2 } from "lucide-react";
+import { Banknote, ChevronLeft, Mail, Loader2 } from "lucide-react";
 import { useCheckoutStore } from "@/stores/checkout-store";
 import type { PaymentMethod as PaymentMethodType } from "@/types/checkout";
 
+/** M-Pesa style icon: green rounded square with white M */
+function MpesaIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 40 40"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden
+    >
+      <rect width="40" height="40" rx="8" fill="#00A651" />
+      <path
+        d="M12 28V12h3.2l4.2 10.2L23.6 12H27v16h-3.2v-9.4l-3.8 9.4h-2.2l-3.8-9.4V28H12z"
+        fill="white"
+      />
+    </svg>
+  );
+}
+
 const paymentIcons = {
   CASH_ON_DELIVERY: Banknote,
-  PAYSTACK: CreditCard,
+  PAYSTACK: MpesaIcon,
 } as const;
 
 interface PaymentMethodProps {
@@ -94,11 +113,19 @@ export function PaymentMethod({
                 }`}
               >
                 <span
-                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${
-                    selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg overflow-hidden ${
+                    opt.value === "PAYSTACK"
+                      ? "bg-transparent"
+                      : selected
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  <Icon className="h-5 w-5" strokeWidth={2} />
+                  {opt.value === "PAYSTACK" ? (
+                    <MpesaIcon className="h-11 w-11" />
+                  ) : (
+                    <Icon className="h-5 w-5" strokeWidth={2} />
+                  )}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-foreground">{opt.label}</p>
