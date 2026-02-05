@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useHomeFilterStore } from "@/stores/home-filter-store";
 import {
     Sparkles,
     Flame,
@@ -60,6 +61,7 @@ export function ProductFilterBar({
     categories,
     initialPagination,
 }: ProductFilterBarProps) {
+    const categorySlug = useHomeFilterStore((s) => s.categorySlug);
     const [activeFilter, setActiveFilter] = useState<FilterType>("all");
     const [gridSize, setGridSize] = useState<"compact" | "comfortable">("comfortable");
     const [currentPage, setCurrentPage] = useState(1);
@@ -195,15 +197,30 @@ export function ProductFilterBar({
         }
     }, []);
 
+    // Sync activeFilter when category is selected from sidebar
+    useEffect(() => {
+        if (categorySlug) {
+            setActiveFilter(categorySlug);
+            setCurrentPage(1);
+        } else if (categories.some((c) => c.slug === activeFilter)) {
+            setActiveFilter("all");
+            setCurrentPage(1);
+        }
+    }, [categorySlug]);
+
     // Fetch when filter or page changes
     useEffect(() => {
         fetchProducts(currentPage, activeFilter);
     }, [currentPage, activeFilter, fetchProducts]);
 
     // Reset to page 1 when filter changes
+    const setCategory = useHomeFilterStore((s) => s.setCategory);
     const handleFilterChange = (filter: FilterType) => {
         setActiveFilter(filter);
         setCurrentPage(1);
+        // Clear sidebar selection when user picks a non-category filter
+        const isCategory = categories.some((c) => c.slug === filter);
+        if (!isCategory) setCategory(null);
     };
 
     const activeFilterData = allFilters.find((f) => f.id === activeFilter);
@@ -239,12 +256,16 @@ export function ProductFilterBar({
     const startIndex = (currentPage - 1) * pagination.productsPerPage + 1;
     const endIndex = Math.min(currentPage * pagination.productsPerPage, pagination.totalProducts);
 
+    const showFilterUI = !categorySlug;
+
     return (
         <div className="space-y-6">
+            {showFilterUI && (
+            <>
             {/* Filter Section Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
-                    <h2 className="text-xl font-bold text-foreground sm:text-2xl">
+                    <h2 className="text-[8px] font-bold uppercase tracking-wide text-foreground sm:text-[9px]">
                         🛒 Shop Our Collection
                     </h2>
                     <p className="text-sm text-muted-foreground">
@@ -364,8 +385,11 @@ export function ProductFilterBar({
                 <div className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-[#9ACD32] to-transparent sm:hidden" />
             </div>
 
+            </>
+            )}
+
             {/* Active Filter Description Badge */}
-            {activeFilterData?.description && activeFilter !== "all" && (
+            {showFilterUI && activeFilterData?.description && activeFilter !== "all" && (
                 <div className="flex items-center gap-2 animate-fade-in-up">
                     <div className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r px-4 py-2 text-xs font-medium text-white shadow-md ${activeFilterData.gradient}`}>
                         {activeFilterData.icon}

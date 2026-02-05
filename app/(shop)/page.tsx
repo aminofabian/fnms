@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { Header } from "@/components/layout/header";
 import { TopSellersSidebar } from "@/components/home/top-sellers-sidebar";
 import { ProductFilterBar } from "@/components/home/product-filter-bar";
-import { DealsCarousel } from "../../components/home/deals-carousel";
+import { HomeDealsSection } from "../../components/home/home-deals-section";
 import { CartFooterBar } from "../../components/layout/cart-footer-bar";
 import type { Category } from "@/types/category";
 import type { Product, ProductImage } from "@/types/product";
@@ -90,19 +90,19 @@ export default async function HomePage() {
     <>
       <Header />
       <main className="min-h-screen pb-20">
-        {/* Sidebar right next to banner image */}
-        <div className="flex flex-col border-b border-black/10 bg-muted lg:flex-row lg:justify-center">
+        {/* Sidebar right next to banner image — same height on desktop, sidebar scrolls */}
+        <div className="mx-auto flex w-full max-w-[1406px] flex-col border-b border-black/10 bg-muted px-4 lg:flex lg:h-[400px] lg:flex-row lg:px-6">
           {categories.length > 0 && (
             <TopSellersSidebar categories={categories} />
           )}
-          <section className="relative my-4 ml-4 shrink-0 bg-muted lg:max-w-[1150px]">
-            <Link href="/products" className="relative block">
+          <section className="relative my-4 ml-4 overflow-hidden bg-muted lg:my-0 lg:ml-0 lg:flex-1 lg:min-w-0">
+            <Link href="/products" className="relative block lg:h-full">
               <Image
                 src="/banner.png"
                 alt="FnM's — Fresh groceries, delivered"
                 width={1150}
                 height={400}
-                className="h-auto w-full max-w-full lg:w-[1150px]"
+                className="h-auto w-full max-w-full lg:h-full lg:w-full lg:object-cover"
                 priority
                 sizes="(max-width: 1024px) 100vw, 1150px"
               />
@@ -114,15 +114,7 @@ export default async function HomePage() {
         </div>
 
         <div className="container mx-auto max-w-6xl px-4 py-6 sm:py-8">
-          {/* Today&apos;s offers */}
-          {deals.length > 0 && (
-            <section
-              className="mb-8 sm:mb-10"
-              aria-labelledby="deals-heading"
-            >
-              <DealsCarousel deals={deals} />
-            </section>
-          )}
+          <HomeDealsSection deals={deals} />
 
           <section aria-label="Products">
             <ProductFilterBar initialProducts={products} categories={categories} />

@@ -3,6 +3,7 @@ export interface CartItemSnapshot {
   slug: string;
   name: string;
   priceCents: number; // can be variant price
+  compareAtCents?: number | null; // original price for savings calc
   imageUrl: string | null;
   unit: string | null;
   stockQuantity: number;

@@ -19,7 +19,7 @@ export function FeaturedProducts({
     <section className="py-12 sm:py-16">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
+          <h2 className="text-[8px] font-bold uppercase tracking-wide text-foreground sm:text-[9px]">
             {title}
           </h2>
           <Link

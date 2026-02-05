@@ -18,7 +18,7 @@ export default function ProductsPage() {
         <CategoryBreadcrumb />
 
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-3xl font-bold text-foreground">All Products</h1>
+          <h1 className="text-[8px] font-bold uppercase tracking-wide text-foreground sm:text-[9px]">All Products</h1>
           <Suspense fallback={<div className="h-10 w-64 animate-pulse rounded-lg bg-muted" />}>
             <SearchBar />
           </Suspense>

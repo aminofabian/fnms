@@ -7,11 +7,13 @@ import type { CartItem, CartItemSnapshot } from "@/types/cart";
 
 function makeSnapshot(product: Product, priceCents?: number): CartItemSnapshot {
   const cents = Number(priceCents ?? product.priceCents) || 0;
+  const compareAt = product.compareAtCents != null ? Number(product.compareAtCents) : null;
   return {
     productId: product.id,
     slug: product.slug,
     name: product.name,
     priceCents: cents,
+    compareAtCents: compareAt != null && compareAt > cents ? compareAt : null,
     imageUrl: product.images?.[0]?.url ?? null,
     unit: product.unit ?? null,
     stockQuantity: Number(product.stockQuantity) || 0,
@@ -25,6 +27,7 @@ interface CartStore {
   updateQuantity: (productId: number, quantity: number, variantId?: number) => void;
   clearCart: () => void;
   getSubtotalCents: () => number;
+  getSavedCents: () => number;
   getItemCount: () => number;
 }
 
@@ -99,6 +102,15 @@ export const useCartStore = create<CartStore>()(
           (sum, i) => sum + (Number(i.snapshot.priceCents) || 0) * (i.quantity || 0),
           0
         );
+      },
+
+      getSavedCents: () => {
+        return get().items.reduce((sum, i) => {
+          const compare = i.snapshot.compareAtCents ?? null;
+          if (compare == null || compare <= (Number(i.snapshot.priceCents) || 0)) return sum;
+          const diff = compare - (Number(i.snapshot.priceCents) || 0);
+          return sum + diff * (i.quantity || 0);
+        }, 0);
       },
 
       getItemCount: () => {

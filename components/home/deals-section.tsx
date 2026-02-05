@@ -24,8 +24,8 @@ export function DealsSection({ products }: DealsSectionProps) {
               <Tag className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
-                Today's Deals
+              <h2 className="text-[8px] font-bold uppercase tracking-wide text-foreground sm:text-[9px]">
+                Today&apos;s Deals
               </h2>
               <p className="text-sm text-muted-foreground">
                 Limited time offers on fresh products

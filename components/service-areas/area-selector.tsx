@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapPin, ChevronDown } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { useServiceAreaStore } from "@/stores/service-area-store";
 import type { ServiceArea } from "@/types/service-area";
 
@@ -36,20 +36,19 @@ export function AreaSelector() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative flex w-full items-center justify-between gap-3 lg:w-auto">
+      <div className="flex flex-1 items-center gap-2">
+        <MapPin className="h-4 w-4 shrink-0 text-primary" />
+        <span className="text-sm text-muted-foreground">
+          Deliver to{" "}
+          <span className="font-semibold text-foreground">{selectedArea?.name ?? "Select area"}</span>
+        </span>
+      </div>
       <button
         onClick={() => setOpen(!open)}
-        className="flex flex-col items-start gap-0 rounded-md px-2 py-1.5 text-left hover:bg-accent sm:flex-row sm:items-center sm:gap-1.5 sm:px-3 sm:py-2"
+        className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground lg:rounded-md lg:bg-transparent lg:px-2 lg:py-1.5 lg:text-primary lg:hover:bg-accent"
       >
-        <div className="flex items-center gap-1.5">
-          <MapPin className="h-4 w-4 shrink-0 text-primary" />
-          <span className="text-xs text-foreground sm:text-sm">Deliver to</span>
-        </div>
-        <span className="text-xs font-semibold text-primary sm:text-sm">
-          {selectedArea?.name ?? "Select area"}
-        </span>
-        <span className="text-xs font-medium text-primary underline sm:ml-0.5">Change</span>
-        <ChevronDown className="absolute right-1 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground sm:static sm:translate-y-0" />
+        Change
       </button>
 
       {open && (
