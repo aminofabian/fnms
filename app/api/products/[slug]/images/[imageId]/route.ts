@@ -22,9 +22,10 @@ export async function DELETE(
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
+    const productId = (productRows[0] as { id: number }).id;
     const { rows: imageRows } = await db.execute({
       sql: "SELECT id FROM product_images WHERE id = ? AND product_id = ? LIMIT 1",
-      args: [id, (productRows[0] as Record<string, unknown>).id],
+      args: [id, productId],
     });
     if (imageRows.length === 0) {
       return NextResponse.json({ error: "Image not found" }, { status: 404 });

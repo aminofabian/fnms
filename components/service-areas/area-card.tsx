@@ -11,7 +11,7 @@ export function AreaCard({ area, onSelect, selected }: AreaCardProps) {
   return (
     <div
       onClick={() => onSelect?.(area)}
-      className={`rounded-xl border p-4 transition-all ${
+      className={`rounded-xl border p-3 transition-all ${
         onSelect ? "cursor-pointer hover:border-primary hover:shadow-md" : ""
       } ${selected ? "border-primary bg-primary/5" : "border-border bg-card"}`}
     >
@@ -27,7 +27,7 @@ export function AreaCard({ area, onSelect, selected }: AreaCardProps) {
         )}
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
+      <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
         <div className="flex items-center gap-1">
           <Truck className="h-4 w-4" />
           <span>
@@ -45,7 +45,7 @@ export function AreaCard({ area, onSelect, selected }: AreaCardProps) {
       </div>
 
       {area.minOrderCents > 0 && (
-        <p className="mt-2 text-xs text-muted-foreground">
+        <p className="mt-1.5 text-xs text-muted-foreground">
           Min order: KES {(area.minOrderCents / 100).toFixed(0)}
         </p>
       )}

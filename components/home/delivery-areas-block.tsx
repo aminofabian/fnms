@@ -16,13 +16,13 @@ export function DeliveryAreasBlock({ areas }: DeliveryAreasBlockProps) {
   if (areas.length === 0) return null;
 
   return (
-    <section className="mb-10 sm:mb-14" aria-label="Delivery locations">
+    <section className="mb-6 sm:mb-8" aria-label="Delivery locations">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-foreground sm:text-2xl">
             Our delivery locations
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-0.5 text-sm text-muted-foreground">
             We deliver to these areas — select yours above or pick one below
           </p>
         </div>
@@ -34,7 +34,7 @@ export function DeliveryAreasBlock({ areas }: DeliveryAreasBlockProps) {
         </Link>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {areas.slice(0, 6).map((area) => (
           <AreaCard
             key={area.id}

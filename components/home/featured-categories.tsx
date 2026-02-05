@@ -11,7 +11,7 @@ export function FeaturedCategories({ categories }: FeaturedCategoriesProps) {
 
   return (
     <div className="relative">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 sm:mb-8">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-bold text-foreground sm:text-2xl md:text-3xl">
           Shop by category
         </h2>
@@ -24,14 +24,14 @@ export function FeaturedCategories({ categories }: FeaturedCategoriesProps) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-6">
         {categories.map((category) => (
           <Link
             key={category.id}
             href={`/categories/${category.slug}`}
-            className="group flex flex-col items-center rounded-2xl border border-black/10 bg-card p-5 text-center shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:border-primary/30 hover:shadow-md hover:ring-primary/10"
+            className="group flex flex-col items-center rounded-2xl border border-black/10 bg-card p-4 text-center shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:border-primary/30 hover:shadow-md hover:ring-primary/10"
           >
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 transition-colors duration-200 group-hover:bg-primary/20 sm:h-16 sm:w-16">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 transition-colors duration-200 group-hover:bg-primary/20 sm:h-14 sm:w-14">
               {category.imageUrl ? (
                 <img
                   src={category.imageUrl}
@@ -42,7 +42,7 @@ export function FeaturedCategories({ categories }: FeaturedCategoriesProps) {
                 <ShoppingBasket className="h-7 w-7 text-primary sm:h-8 sm:w-8" aria-hidden />
               )}
             </div>
-            <h3 className="mt-3 text-sm font-medium text-foreground transition-colors group-hover:text-primary sm:text-base">
+            <h3 className="mt-2 text-sm font-medium text-foreground transition-colors group-hover:text-primary sm:text-base">
               {category.name}
             </h3>
           </Link>

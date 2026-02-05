@@ -42,18 +42,18 @@ export function HeroBanner({ areas }: HeroBannerProps) {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }}
       />
-      <div className="container relative mx-auto px-4 py-8 sm:py-10 md:py-12">
+      <div className="container relative mx-auto px-4 py-5 sm:py-6 md:py-8">
         <div className="mx-auto max-w-2xl">
           {/* Main headline — focus on delivery area */}
           <h1 className="text-center text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
             Do we deliver to you?
           </h1>
-          <p className="mt-2 text-center text-muted-foreground sm:text-lg">
+          <p className="mt-1 text-center text-muted-foreground sm:text-lg">
             Select or check your area to see delivery options and shop
           </p>
 
           {/* Primary: Area selector */}
-          <div className="mt-6">
+          <div className="mt-4">
             <label htmlFor="delivery-area" className="mb-2 block text-sm font-medium text-foreground">
               Your delivery area
             </label>
@@ -89,7 +89,7 @@ export function HeroBanner({ areas }: HeroBannerProps) {
 
           {/* Secondary: Check your area (collapsible) */}
           {areas.length > 0 && (
-            <div className="mt-4">
+            <div className="mt-3">
               <button
                 type="button"
                 onClick={() => setShowAreaChecker(!showAreaChecker)}
@@ -107,7 +107,7 @@ export function HeroBanner({ areas }: HeroBannerProps) {
 
           {/* Link to all areas */}
           {areas.length > 0 && (
-            <p className="mt-4 text-center">
+            <p className="mt-3 text-center">
               <Link
                 href="/delivery-areas"
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
@@ -119,7 +119,7 @@ export function HeroBanner({ areas }: HeroBannerProps) {
           )}
 
           {/* Search — tertiary, below the fold of the hero */}
-          <form onSubmit={handleSearch} className="relative mt-6">
+          <form onSubmit={handleSearch} className="relative mt-4">
             <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
             <input
               type="search"

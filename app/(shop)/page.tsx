@@ -117,14 +117,14 @@ export default async function HomePage() {
       <main className="min-h-screen pb-28">
         <HeroBanner areas={areas} />
 
-        <div className="container mx-auto px-4 py-6 sm:py-8">
+        <div className="container mx-auto px-4 py-4 sm:py-5">
           {/* Delivery locations first */}
           <DeliveryAreasBlock areas={areas} />
           <AreaPromptBanner />
 
           {/* Category pills — quick nav */}
           {categories.length > 0 && (
-            <section className="mb-8 sm:mb-10" aria-label="Browse by category">
+            <section className="mb-4 sm:mb-6" aria-label="Browse by category">
               <h2 className="sr-only">Browse by category</h2>
               <CategoryPills categories={categories} />
             </section>
@@ -132,20 +132,20 @@ export default async function HomePage() {
 
           {/* Shop by category — visual grid */}
           {categories.length > 0 && (
-            <section className="mb-12 sm:mb-16">
+            <section className="mb-6 sm:mb-8">
               <FeaturedCategories categories={categories} />
             </section>
           )}
 
           {/* Today's offers */}
           {deals.length > 0 && (
-            <section className="mb-12 sm:mb-16" aria-label="Today's offers">
+            <section className="mb-6 sm:mb-8" aria-label="Today's offers">
               <DealsCarousel deals={deals} />
             </section>
           )}
 
           {/* How it works — trust */}
-          <section className="mb-12 sm:mb-16">
+          <section className="mb-6 sm:mb-8">
             <HowItWorks />
           </section>
 
