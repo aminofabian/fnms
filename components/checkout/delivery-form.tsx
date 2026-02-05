@@ -4,12 +4,18 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSession } from "next-auth/react";
-import { MapPin } from "lucide-react";
+import { MapPin, Navigation, MapPinned } from "lucide-react";
+import dynamic from "next/dynamic";
 import { deliverySchema, type DeliveryInput } from "@/lib/validations/checkout";
 import { useCheckoutStore } from "@/stores/checkout-store";
 import { useServiceAreaStore } from "@/stores/service-area-store";
 import type { ServiceArea } from "@/types/service-area";
 import type { DeliveryInfo } from "@/types/checkout";
+
+const MapAddressPicker = dynamic(
+  () => import("./map-address-picker").then((m) => m.MapAddressPicker),
+  { ssr: false, loading: () => <div className="h-[240px] animate-pulse rounded-xl bg-muted/30" /> }
+);
 
 const LAST_DELIVERY_KEY = "fnms_last_delivery";
 
@@ -84,6 +90,10 @@ export function DeliveryForm({ onNext }: DeliveryFormProps) {
   const { selectedArea, setSelectedArea } = useServiceAreaStore();
   const [areas, setAreas] = useState<ServiceArea[]>([]);
   const [loading, setLoading] = useState(true);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [mapExpanded, setMapExpanded] = useState(false);
+  const [lastCoords, setLastCoords] = useState<{ lat: number; lon: number } | null>(null);
 
   const {
     register,
@@ -206,6 +216,50 @@ export function DeliveryForm({ onNext }: DeliveryFormProps) {
     }
   }, [serviceAreaId, areas, setSelectedArea]);
 
+  async function handleUseLocation() {
+    if (!navigator?.geolocation) {
+      setLocationError("Location is not supported by your browser.");
+      return;
+    }
+    setLocationError(null);
+    setLocationLoading(true);
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 60000,
+        });
+      });
+      const { latitude, longitude } = position.coords;
+      setLastCoords({ lat: latitude, lon: longitude });
+      const res = await fetch(`/api/geocode/reverse?lat=${latitude}&lon=${longitude}`);
+      const data = (await res.json()) as { address?: string; error?: string };
+      if (data?.error || !data?.address) {
+        setLocationError(data?.error ?? "Could not get address for your location.");
+        return;
+      }
+      setValue("deliveryAddress", data.address, { shouldValidate: true });
+      setMapExpanded(false);
+    } catch (e) {
+      const code = e && typeof e === "object" && "code" in e ? (e as { code: number }).code : 0;
+      const message =
+        code === 1
+          ? "Location permission denied. You can type your address instead."
+          : code === 2 || code === 3
+            ? "Could not get your location. Try again or type your address."
+            : "Something went wrong. Try again or type your address.";
+      setLocationError(message);
+    } finally {
+      setLocationLoading(false);
+    }
+  }
+
+  function handleMapAddressSelect(address: string) {
+    setValue("deliveryAddress", address, { shouldValidate: true });
+    setLocationError(null);
+  }
+
   async function onSubmit(data: DeliveryInput) {
     setDelivery(data);
     setStoredDelivery(data);
@@ -315,6 +369,41 @@ export function DeliveryForm({ onNext }: DeliveryFormProps) {
             Example: Orange House, Apt 3B, 2nd floor, near City Mall
           </p>
         </div>
+        <div className="mb-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handleUseLocation}
+            disabled={locationLoading}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm hover:bg-muted/50 disabled:opacity-50"
+          >
+            {locationLoading ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            ) : (
+              <Navigation className="h-4 w-4" />
+            )}
+            Use my current location
+          </button>
+          <button
+            type="button"
+            onClick={() => setMapExpanded((v) => !v)}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm hover:bg-muted/50"
+          >
+            <MapPinned className="h-4 w-4" />
+            {mapExpanded ? "Hide map" : "Set location on map"}
+          </button>
+        </div>
+        {locationError && (
+          <p className="mb-2 text-sm text-destructive">{locationError}</p>
+        )}
+        {mapExpanded && (
+          <div className="mb-3">
+            <MapAddressPicker
+              initialCenter={lastCoords ? [lastCoords.lat, lastCoords.lon] : null}
+              onAddressSelect={handleMapAddressSelect}
+              onError={setLocationError}
+            />
+          </div>
+        )}
         <textarea
           rows={3}
           className="w-full rounded-xl border border-border bg-input px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
