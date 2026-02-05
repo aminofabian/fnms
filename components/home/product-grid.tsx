@@ -45,7 +45,7 @@ export function ProductGrid({ products, title, titleId, titleClassName }: Produc
           {title}
         </h2>
       )}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {products.map((product) => {
           const imageUrl = product.images?.[0]?.url;
           const price = product.priceCents / 100;
