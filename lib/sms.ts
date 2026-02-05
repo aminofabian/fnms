@@ -8,6 +8,15 @@ const PARTNER_ID = process.env.SMS_PARTNER_ID;
 const API_KEY = process.env.SMS_API_KEY;
 const SHORTCODE = process.env.SMS_SENDER_ID ?? "TextSMS";
 
+/** Normalize Kenyan phone to 254XXXXXXXXX for TextSMS API. */
+export function normalizePhone(phone: string): string | null {
+  const digits = phone.trim().replace(/\D/g, "");
+  if (digits.length === 10 && digits.startsWith("0")) return "254" + digits.slice(1);
+  if (digits.length === 12 && digits.startsWith("254")) return digits;
+  if (digits.length === 9) return "254" + digits;
+  return null;
+}
+
 function getAdminPhones(): string[] {
   const raw = process.env.ADMIN_PHONES;
   if (!raw?.trim()) return [];
@@ -70,5 +79,18 @@ export function sendOrderAlert(params: {
     sendSms(message, mobile).then((r) => {
       if (!r.success) console.error("[SMS] Order alert failed for", mobile, r.error);
     });
+  });
+}
+
+/** Send order-received confirmation to the customer (logged-in user's phone). Fire-and-forget. */
+export function sendOrderReceivedSms(orderNumber: string, userPhone: string): void {
+  const mobile = normalizePhone(userPhone);
+  if (!mobile) {
+    console.warn("[SMS] Invalid user phone for order-received SMS:", userPhone);
+    return;
+  }
+  const message = `Your order ${orderNumber} has been received and will be processed in less than an hour. Thank you for shopping with FnM's.`;
+  sendSms(message, mobile).then((r) => {
+    if (!r.success) console.error("[SMS] Order-received SMS failed for", mobile, r.error);
   });
 }

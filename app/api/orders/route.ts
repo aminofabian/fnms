@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { sendOrderConfirmation } from "@/lib/email";
-import { sendOrderAlert } from "@/lib/sms";
+import { sendOrderAlert, sendOrderReceivedSms } from "@/lib/sms";
 
 interface OrderItemInput {
   productId: number;
@@ -205,6 +205,18 @@ export async function POST(request: Request) {
       totalCents,
       recipientName: delivery.recipientName,
     });
+
+    // Notify logged-in user via SMS on their profile phone (non-blocking)
+    if (session?.user?.id) {
+      const { rows: userRows } = await db.execute({
+        sql: "SELECT phone FROM users WHERE id = ? LIMIT 1",
+        args: [session.user.id],
+      });
+      const userPhone = userRows[0] && userRows[0].phone != null ? String(userRows[0].phone) : null;
+      if (userPhone) {
+        sendOrderReceivedSms(orderNumber, userPhone);
+      }
+    }
 
     // Clear user's cart if logged in
     if (session?.user?.id) {
