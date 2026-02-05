@@ -18,7 +18,7 @@ export function CartSummary() {
       <dl className="mt-3 space-y-2 text-sm">
         <div className="flex justify-between">
           <dt className="text-muted-foreground">Subtotal</dt>
-          <dd className="font-medium">KES {(subtotalCents / 100).toLocaleString()}</dd>
+          <dd className="font-medium">KES {((Number(subtotalCents) || 0) / 100).toLocaleString()}</dd>
         </div>
         <div className="flex justify-between">
           <dt className="text-muted-foreground">Delivery</dt>
@@ -28,7 +28,7 @@ export function CartSummary() {
         </div>
         <div className="flex justify-between border-t border-border pt-2 text-base">
           <dt className="font-semibold text-foreground">Total</dt>
-          <dd className="font-semibold">KES {(totalCents / 100).toLocaleString()}</dd>
+          <dd className="font-semibold">KES {((Number(totalCents) || 0) / 100).toLocaleString()}</dd>
         </div>
       </dl>
       <Link

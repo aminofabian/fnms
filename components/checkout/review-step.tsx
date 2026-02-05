@@ -41,12 +41,12 @@ export function ReviewStep({ onBack, onNext }: ReviewStepProps) {
                 <div>
                   <p className="font-medium text-foreground">{item.snapshot.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    KES {(item.snapshot.priceCents / 100).toLocaleString()} × {item.quantity}
+                    KES {((Number(item.snapshot.priceCents) || 0) / 100).toLocaleString()} × {item.quantity}
                   </p>
                 </div>
               </div>
               <p className="font-medium">
-                KES {((item.snapshot.priceCents * item.quantity) / 100).toLocaleString()}
+                KES {((Number(item.snapshot.priceCents) || 0) * (item.quantity || 0) / 100).toLocaleString()}
               </p>
             </div>
           ))}
@@ -72,7 +72,7 @@ export function ReviewStep({ onBack, onNext }: ReviewStepProps) {
       <dl className="space-y-2 text-sm">
         <div className="flex justify-between">
           <dt className="text-muted-foreground">Subtotal</dt>
-          <dd className="font-medium">KES {(subtotalCents / 100).toLocaleString()}</dd>
+          <dd className="font-medium">KES {((Number(subtotalCents) || 0) / 100).toLocaleString()}</dd>
         </div>
         <div className="flex justify-between">
           <dt className="text-muted-foreground">Delivery</dt>
@@ -80,7 +80,7 @@ export function ReviewStep({ onBack, onNext }: ReviewStepProps) {
         </div>
         <div className="flex justify-between border-t border-border pt-2 text-base">
           <dt className="font-semibold text-foreground">Total</dt>
-          <dd className="font-semibold">KES {(totalCents / 100).toLocaleString()}</dd>
+          <dd className="font-semibold">KES {((Number(totalCents) || 0) / 100).toLocaleString()}</dd>
         </div>
       </dl>
 

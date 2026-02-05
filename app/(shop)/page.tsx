@@ -3,11 +3,9 @@ import Image from "next/image";
 import { db } from "@/lib/db";
 import { Header } from "@/components/layout/header";
 import { TopSellersSidebar } from "@/components/home/top-sellers-sidebar";
-import { CategoryPills } from "@/components/home/category-pills";
 import { ProductGrid } from "@/components/home/product-grid";
-import { QuickCart } from "@/components/home/quick-cart";
 import { DealsCarousel } from "../../components/home/deals-carousel";
-import { FabMenu } from "@/components/layout/fab-menu";
+import { CartFooterBar } from "../../components/layout/cart-footer-bar";
 import type { Category } from "@/types/category";
 import type { Product, ProductImage } from "@/types/product";
 async function getCategories(): Promise<Category[]> {
@@ -91,7 +89,7 @@ export default async function HomePage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen pb-24">
+      <main className="min-h-screen pb-20">
         {/* Green strip above hero */}
         <div
           className="px-4 py-2.5 text-center text-sm font-semibold uppercase tracking-wide text-white"
@@ -100,83 +98,47 @@ export default async function HomePage() {
           Shop FnM&apos;s — Fresh for less every day
         </div>
 
-        {/* Hero banner with SHOP NOW overlay */}
-        <section className="relative w-full border-b border-black/10 bg-muted">
-          <Link href="/products" className="relative mx-auto flex max-w-[1150px] justify-center">
-            <Image
-              src="/banner.png"
-              alt="FnM's — Fresh groceries, delivered"
-              width={1150}
-              height={400}
-              className="h-auto max-w-full w-auto"
-              priority
-              sizes="(max-width: 1150px) 100vw, 1150px"
-            />
-            <span className="absolute bottom-4 right-4 rounded-md bg-primary px-4 py-2.5 text-sm font-bold uppercase text-primary-foreground shadow-md hover:opacity-90 sm:bottom-6 sm:right-8 sm:px-6 sm:py-3 sm:text-base">
-              Shop now
-            </span>
-          </Link>
-        </section>
+        {/* Sidebar right next to banner image */}
+        <div className="flex flex-col border-b border-black/10 bg-muted lg:flex-row lg:justify-center">
+          {categories.length > 0 && (
+            <TopSellersSidebar categories={categories} />
+          )}
+          <section className="relative my-4 ml-4 shrink-0 bg-muted lg:max-w-[1150px]">
+            <Link href="/products" className="relative block">
+              <Image
+                src="/banner.png"
+                alt="FnM's — Fresh groceries, delivered"
+                width={1150}
+                height={400}
+                className="h-auto w-full max-w-full lg:w-[1150px]"
+                priority
+                sizes="(max-width: 1024px) 100vw, 1150px"
+              />
+              <span className="absolute bottom-4 right-4 rounded-md bg-primary px-4 py-2.5 text-sm font-bold uppercase text-primary-foreground shadow-md hover:opacity-90 sm:bottom-6 sm:right-8 sm:px-6 sm:py-3 sm:text-base">
+                Shop now
+              </span>
+            </Link>
+          </section>
+        </div>
 
         <div className="container mx-auto max-w-6xl px-4 py-6 sm:py-8">
-          <div className="flex flex-col gap-8 lg:flex-row">
-            {/* Left sidebar — TOP SELLERS */}
-            {categories.length > 0 && (
-              <TopSellersSidebar categories={categories} />
-            )}
+          {/* Today&apos;s offers */}
+          {deals.length > 0 && (
+            <section
+              className="mb-8 sm:mb-10"
+              aria-labelledby="deals-heading"
+            >
+              <DealsCarousel deals={deals} />
+            </section>
+          )}
 
-            <div className="min-w-0 flex-1">
-              {/* Most Popular — category pills */}
-              {categories.length > 0 && (
-                <section
-                  className="mb-8 sm:mb-10"
-                  aria-labelledby="categories-heading"
-                >
-                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                    <h2
-                      id="categories-heading"
-                      className="text-lg font-semibold sm:text-xl"
-                      style={{ color: "var(--nav-green)" }}
-                    >
-                      Most Popular
-                    </h2>
-                    <Link
-                      href="/categories"
-                      className="text-sm font-medium text-primary hover:underline"
-                    >
-                      View all →
-                    </Link>
-                  </div>
-                  <CategoryPills categories={categories} />
-                </section>
-              )}
-
-              {/* Today&apos;s offers */}
-              {deals.length > 0 && (
-                <section
-                  className="mb-8 sm:mb-10"
-                  aria-labelledby="deals-heading"
-                >
-                  <DealsCarousel deals={deals} />
-                </section>
-              )}
-
-              {/* All products */}
-              <section aria-labelledby="products-heading">
-                <ProductGrid
-                  products={products}
-                  title="All products"
-                  titleId="products-heading"
-                  titleClassName="[color:var(--nav-green)]"
-                />
-              </section>
-            </div>
-          </div>
+          <section aria-label="Products">
+            <ProductGrid products={products} />
+          </section>
         </div>
       </main>
 
-      <QuickCart />
-      <FabMenu />
+      <CartFooterBar />
     </>
   );
 }

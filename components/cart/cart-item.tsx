@@ -14,7 +14,7 @@ export function CartItem({ item }: CartItemProps) {
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeItem = useCartStore((s) => s.removeItem);
 
-  const price = (item.snapshot.priceCents * item.quantity) / 100;
+  const price = ((Number(item.snapshot.priceCents) || 0) * (item.quantity || 0)) / 100;
   const maxQty = Math.min(item.snapshot.stockQuantity || 99, 99);
 
   return (
@@ -40,7 +40,7 @@ export function CartItem({ item }: CartItemProps) {
           {item.snapshot.name}
         </Link>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          KES {(item.snapshot.priceCents / 100).toLocaleString()}
+          KES {((Number(item.snapshot.priceCents) || 0) / 100).toLocaleString()}
           {item.snapshot.unit && ` per ${item.snapshot.unit}`}
         </p>
         <div className="mt-2 flex items-center gap-2">

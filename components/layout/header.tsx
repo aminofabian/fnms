@@ -94,7 +94,7 @@ function CartSummary() {
       </div>
       <div className="hidden text-left sm:block">
         <div className="text-xs font-semibold text-primary">
-          KES {(subtotalCents / 100).toLocaleString()}
+          KES {((Number(subtotalCents) || 0) / 100).toLocaleString()}
         </div>
         <span className="inline-block rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
           Saved 0

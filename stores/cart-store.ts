@@ -5,12 +5,13 @@ import { persist } from "zustand/middleware";
 import type { Product } from "@/types/product";
 import type { CartItem, CartItemSnapshot } from "@/types/cart";
 
-function makeSnapshot(product: Product): CartItemSnapshot {
+function makeSnapshot(product: Product, priceCents?: number): CartItemSnapshot {
+  const cents = Number(priceCents ?? product.priceCents) || 0;
   return {
     productId: product.id,
     slug: product.slug,
     name: product.name,
-    priceCents: Number(product.priceCents) || 0,
+    priceCents: cents,
     imageUrl: product.images?.[0]?.url ?? null,
     unit: product.unit ?? null,
     stockQuantity: Number(product.stockQuantity) || 0,
@@ -34,10 +35,12 @@ export const useCartStore = create<CartStore>()(
 
       addItem: (product, quantity, variantId) => {
         if (quantity < 1) return;
-        const snapshot = makeSnapshot(product);
-        const priceCents = variantId
-          ? product.variants?.find((v) => v.id === variantId)?.priceCents ?? product.priceCents
-          : product.priceCents;
+        const priceCents = Number(
+          variantId
+            ? product.variants?.find((v) => v.id === variantId)?.priceCents ?? product.priceCents
+            : product.priceCents
+        ) || 0;
+        const snapshot = makeSnapshot(product, priceCents);
         set((state) => {
           const existing = state.items.findIndex(
             (i) => i.productId === product.id && (i.variantId ?? undefined) === (variantId ?? undefined)
@@ -59,7 +62,7 @@ export const useCartStore = create<CartStore>()(
                 productId: product.id,
                 variantId,
                 quantity: Math.min(quantity, product.stockQuantity || 99),
-                snapshot: { ...snapshot, priceCents },
+                snapshot,
               },
             ];
           }
@@ -92,7 +95,10 @@ export const useCartStore = create<CartStore>()(
       clearCart: () => set({ items: [] }),
 
       getSubtotalCents: () => {
-        return get().items.reduce((sum, i) => sum + i.snapshot.priceCents * i.quantity, 0);
+        return get().items.reduce(
+          (sum, i) => sum + (Number(i.snapshot.priceCents) || 0) * (i.quantity || 0),
+          0
+        );
       },
 
       getItemCount: () => {

@@ -42,39 +42,32 @@ interface TopSellersSidebarProps {
 
 export function TopSellersSidebar({ categories }: TopSellersSidebarProps) {
   return (
-    <aside className="w-full shrink-0 lg:w-56">
-      <div
-        className="px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white"
-        style={{ backgroundColor: "var(--nav-green)" }}
-      >
-        Top Sellers
-      </div>
-      <nav className="border border-t-0 border-border bg-card">
-        <Link
-          href="/"
-          className="flex items-center gap-3 border-b border-border px-4 py-3 text-sm font-medium text-foreground hover:bg-accent"
-        >
-          <Percent className="h-4 w-4 shrink-0 text-primary" />
-          Promos
-        </Link>
+    <aside
+      className="flex w-full shrink-0 flex-col lg:w-56"
+      style={{
+        background: "linear-gradient(180deg, rgba(26, 109, 71, 0.12) 0%, rgba(26, 109, 71, 0.06) 50%, rgba(255, 255, 255, 0.4) 100%)",
+        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.2), 2px 0 8px -2px rgba(0,0,0,0.06)",
+      }}
+    >
+      <nav className="flex-1 px-2 py-3 lg:px-3">
         {categories.map((cat) => {
           const Icon = getIcon(cat.slug);
           return (
             <Link
               key={cat.id}
               href={`/categories/${cat.slug}`}
-              className="flex items-center gap-3 border-b border-border px-4 py-3 text-sm text-muted-foreground hover:bg-accent hover:text-foreground last:border-b-0"
+              className="flex items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-sm font-medium text-foreground/85 transition-colors hover:border-primary/20 hover:bg-white/60 hover:text-foreground"
             >
               {cat.imageUrl ? (
                 <img
                   src={cat.imageUrl}
                   alt=""
-                  className="h-5 w-5 shrink-0 rounded object-cover"
+                  className="h-5 w-5 shrink-0 rounded-md object-cover ring-1 ring-black/8"
                 />
               ) : (
-                <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <Icon className="h-4 w-4 shrink-0 text-primary/80" />
               )}
-              {cat.name}
+              <span className="truncate">{cat.name}</span>
             </Link>
           );
         })}

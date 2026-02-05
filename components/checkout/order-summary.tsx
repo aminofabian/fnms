@@ -44,7 +44,7 @@ export function OrderSummary({ showPromoInput = true }: OrderSummaryProps) {
               {item.snapshot.name} × {item.quantity}
             </span>
             <span className="font-medium">
-              KES {((item.snapshot.priceCents * item.quantity) / 100).toLocaleString()}
+              KES {((Number(item.snapshot.priceCents) || 0) * (item.quantity || 0) / 100).toLocaleString()}
             </span>
           </div>
         ))}
@@ -65,7 +65,7 @@ export function OrderSummary({ showPromoInput = true }: OrderSummaryProps) {
       <dl className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
         <div className="flex justify-between">
           <dt className="text-muted-foreground">Subtotal</dt>
-          <dd className="font-medium">KES {(subtotalCents / 100).toLocaleString()}</dd>
+          <dd className="font-medium">KES {((Number(subtotalCents) || 0) / 100).toLocaleString()}</dd>
         </div>
         <div className="flex justify-between">
           <dt className="text-muted-foreground">
