@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    const order = rows[0] as { id: number; order_number: string; total_cents: number; payment_method: string; payment_status: string };
+    const order = rows[0] as unknown as { id: number; order_number: string; total_cents: number; payment_method: string; payment_status: string };
     if (order.payment_method !== "PAYSTACK") {
       return NextResponse.json({ error: "Order is not a Paystack order" }, { status: 400 });
     }

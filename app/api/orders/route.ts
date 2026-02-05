@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { sendOrderConfirmation } from "@/lib/email";
+import { sendOrderAlert } from "@/lib/sms";
 
 interface OrderItemInput {
   productId: number;
@@ -176,6 +177,13 @@ export async function POST(request: Request) {
         if (!r.success) console.error("[Orders] Confirmation email failed:", r.error);
       });
     }
+
+    // Notify admins via SMS (non-blocking)
+    sendOrderAlert({
+      orderNumber,
+      totalCents,
+      recipientName: delivery.recipientName,
+    });
 
     // Clear user's cart if logged in
     if (session?.user?.id) {
