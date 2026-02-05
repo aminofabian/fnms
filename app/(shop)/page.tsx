@@ -91,7 +91,7 @@ export default async function HomePage() {
       <Header />
       <main className="min-h-screen pb-20">
         {/* Sidebar right next to banner image — same height on desktop, sidebar scrolls */}
-        <div className="mx-auto flex w-full max-w-[1406px] flex-col border-b border-black/10 bg-muted px-4 lg:flex lg:h-[400px] lg:flex-row lg:px-6">
+        <div className="mx-auto mt-4 flex w-full max-w-[1406px] flex-col border-b border-black/10 bg-muted px-4 lg:mt-6 lg:flex lg:h-[400px] lg:flex-row lg:px-6">
           {categories.length > 0 && (
             <TopSellersSidebar categories={categories} />
           )}

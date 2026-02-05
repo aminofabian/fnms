@@ -83,7 +83,7 @@ export function ProductFilterBar({
         {
             id: "all",
             label: "All Products",
-            icon: <Grid3X3 className="h-4 w-4" />,
+            icon: <Grid3X3 className="h-3 w-3" />,
             gradient: "from-slate-500 to-slate-700",
             glowColor: "rgba(100, 116, 139, 0.4)",
             description: "Browse everything",
@@ -91,7 +91,7 @@ export function ProductFilterBar({
         {
             id: "deals",
             label: "Hot Deals",
-            icon: <Flame className="h-4 w-4" />,
+            icon: <Flame className="h-3 w-3" />,
             gradient: "from-orange-500 to-red-600",
             glowColor: "rgba(249, 115, 22, 0.5)",
             description: "Save big today",
@@ -99,7 +99,7 @@ export function ProductFilterBar({
         {
             id: "new",
             label: "Just Arrived",
-            icon: <Sparkles className="h-4 w-4" />,
+            icon: <Sparkles className="h-3 w-3" />,
             gradient: "from-violet-500 to-purple-600",
             glowColor: "rgba(139, 92, 246, 0.5)",
             description: "Fresh additions",
@@ -107,7 +107,7 @@ export function ProductFilterBar({
         {
             id: "popular",
             label: "Trending",
-            icon: <TrendingUp className="h-4 w-4" />,
+            icon: <TrendingUp className="h-3 w-3" />,
             gradient: "from-pink-500 to-rose-600",
             glowColor: "rgba(236, 72, 153, 0.5)",
             description: "Customer favorites",
@@ -115,7 +115,7 @@ export function ProductFilterBar({
         {
             id: "inStock",
             label: "Available Now",
-            icon: <Package className="h-4 w-4" />,
+            icon: <Package className="h-3 w-3" />,
             gradient: "from-emerald-500 to-green-600",
             glowColor: "rgba(16, 185, 129, 0.5)",
             description: "Ready to ship",
@@ -131,27 +131,27 @@ export function ProductFilterBar({
             {
                 gradient: "from-lime-500 to-green-600",
                 glowColor: "rgba(132, 204, 22, 0.5)",
-                icon: <Leaf className="h-4 w-4" />,
+                icon: <Leaf className="h-3 w-3" />,
             },
             {
                 gradient: "from-amber-500 to-yellow-600",
                 glowColor: "rgba(245, 158, 11, 0.5)",
-                icon: <Star className="h-4 w-4" />,
+                icon: <Star className="h-3 w-3" />,
             },
             {
                 gradient: "from-cyan-500 to-teal-600",
                 glowColor: "rgba(6, 182, 212, 0.5)",
-                icon: <Tag className="h-4 w-4" />,
+                icon: <Tag className="h-3 w-3" />,
             },
             {
                 gradient: "from-indigo-500 to-blue-600",
                 glowColor: "rgba(99, 102, 241, 0.5)",
-                icon: <Clock className="h-4 w-4" />,
+                icon: <Clock className="h-3 w-3" />,
             },
             {
                 gradient: "from-fuchsia-500 to-pink-600",
                 glowColor: "rgba(192, 38, 211, 0.5)",
-                icon: <Sparkles className="h-4 w-4" />,
+                icon: <Sparkles className="h-3 w-3" />,
             },
         ];
 
@@ -320,16 +320,13 @@ export function ProductFilterBar({
                                 key={filter.id}
                                 onClick={() => handleFilterChange(filter.id)}
                                 disabled={isLoading}
-                                className={`group relative flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-300 ease-out sm:px-5 sm:py-3 ${isActive
-                                    ? "scale-[1.02] text-white shadow-lg"
-                                    : "bg-white/90 text-foreground shadow-sm ring-1 ring-black/5 hover:scale-[1.01] hover:shadow-md hover:ring-black/10"
+                                className={`group relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-[9px] font-semibold uppercase tracking-wide transition-all duration-200 sm:px-4 sm:py-2 sm:text-[10px] ${isActive
+                                    ? "scale-[1.01] text-white shadow-md"
+                                    : "bg-white/90 text-foreground shadow-sm ring-1 ring-black/5 hover:ring-black/10"
                                     } ${isLoading ? "opacity-70 cursor-wait" : ""}`}
                                 style={{
-                                    background: isActive
-                                        ? `linear-gradient(135deg, var(--tw-gradient-stops))`
-                                        : undefined,
                                     boxShadow: isActive
-                                        ? `0 10px 40px -10px ${filter.glowColor}, 0 4px 6px -4px rgba(0,0,0,0.1)`
+                                        ? `0 2px 8px -2px ${filter.glowColor}`
                                         : undefined,
                                 }}
                                 aria-pressed={isActive}
@@ -337,45 +334,18 @@ export function ProductFilterBar({
                                 {/* Gradient background for active state */}
                                 {isActive && (
                                     <div
-                                        className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${filter.gradient}`}
+                                        className={`absolute inset-0 rounded-lg bg-gradient-to-r ${filter.gradient}`}
                                         style={{ zIndex: -1 }}
                                     />
                                 )}
 
-                                {/* Animated glow effect for active button */}
-                                {isActive && (
-                                    <div
-                                        className="absolute inset-0 -z-10 animate-pulse rounded-2xl opacity-50 blur-xl"
-                                        style={{
-                                            background: `linear-gradient(135deg, ${filter.glowColor}, transparent)`,
-                                        }}
-                                    />
-                                )}
-
-                                {/* Icon with micro-animation */}
                                 <span
-                                    className={`transition-transform duration-200 ${isActive ? "animate-bounce" : "group-hover:scale-110"
-                                        }`}
-                                    style={{ animationDuration: isActive ? "1s" : undefined }}
+                                    className={`transition-transform duration-150 ${isActive ? "" : "group-hover:scale-105"}`}
                                 >
                                     {filter.icon}
                                 </span>
 
-                                {/* Label */}
                                 <span className="whitespace-nowrap">{filter.label}</span>
-
-                                {/* Active indicator dot */}
-                                {isActive && (
-                                    <span className="absolute -right-1 -top-1 flex h-3 w-3">
-                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-                                        <span className="relative inline-flex h-3 w-3 rounded-full bg-white" />
-                                    </span>
-                                )}
-
-                                {/* Hover shine effect */}
-                                <div className="absolute inset-0 -z-10 overflow-hidden rounded-2xl">
-                                    <div className="absolute -inset-full h-full w-1/2 rotate-12 transform bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 transition-all duration-700 ease-out group-hover:translate-x-[200%] group-hover:opacity-100" />
-                                </div>
                             </button>
                         );
                     })}
