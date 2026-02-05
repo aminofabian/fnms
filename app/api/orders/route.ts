@@ -101,6 +101,27 @@ export async function POST(request: Request) {
       );
     }
 
+    // First order or guest: only M-Pesa (Paystack); cash on delivery allowed on subsequent orders only
+    if (paymentMethod === "CASH_ON_DELIVERY") {
+      if (!session?.user?.id) {
+        return NextResponse.json(
+          { error: "Cash on delivery is available from your second order. Please pay with M-Pesa for this order." },
+          { status: 400 }
+        );
+      }
+      const { rows: countRows } = await db.execute({
+        sql: "SELECT COUNT(*) as count FROM orders WHERE user_id = ?",
+        args: [session.user.id],
+      });
+      const orderCount = Number((countRows[0] as { count: number }).count ?? 0);
+      if (orderCount === 0) {
+        return NextResponse.json(
+          { error: "Cash on delivery is available from your second order. Please pay with M-Pesa for your first order." },
+          { status: 400 }
+        );
+      }
+    }
+
     const totalCents = subtotalCents + deliveryFeeCents;
     const orderNumber = generateOrderNumber();
 

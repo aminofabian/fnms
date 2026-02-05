@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { CheckoutSteps } from "@/components/checkout/checkout-steps";
@@ -22,6 +22,18 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paystackEmail, setPaystackEmail] = useState("");
+  const [isFirstOrder, setIsFirstOrder] = useState(true);
+
+  useEffect(() => {
+    if (!session?.user) {
+      setIsFirstOrder(true);
+      return;
+    }
+    fetch("/api/orders/count")
+      .then((res) => (res.ok ? res.json() : { count: 0 }))
+      .then((data: { count?: number }) => setIsFirstOrder(Number(data?.count ?? 0) === 0))
+      .catch(() => setIsFirstOrder(true));
+  }, [session?.user]);
 
   if (items.length === 0) {
     return (
@@ -136,6 +148,7 @@ export default function CheckoutPage() {
           paystackEmail={paystackEmail}
           onPaystackEmailChange={setPaystackEmail}
           hasSessionEmail={Boolean(session?.user?.email)}
+          isFirstOrder={isFirstOrder}
         />
       )}
     </div>

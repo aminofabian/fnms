@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useCheckoutStore } from "@/stores/checkout-store";
 import type { PaymentMethod as PaymentMethodType } from "@/types/checkout";
 
@@ -11,6 +12,8 @@ interface PaymentMethodProps {
   paystackEmail?: string;
   onPaystackEmailChange?: (email: string) => void;
   hasSessionEmail?: boolean;
+  /** First-time customers must use M-Pesa (Paystack); cash on delivery only on subsequent orders */
+  isFirstOrder?: boolean;
 }
 
 export function PaymentMethod({
@@ -20,10 +23,17 @@ export function PaymentMethod({
   paystackEmail = "",
   onPaystackEmailChange,
   hasSessionEmail = false,
+  isFirstOrder = false,
 }: PaymentMethodProps) {
   const { paymentMethod, setPaymentMethod } = useCheckoutStore();
 
-  const options: { value: PaymentMethodType; label: string; description: string }[] = [
+  useEffect(() => {
+    if (isFirstOrder && paymentMethod === "CASH_ON_DELIVERY") {
+      setPaymentMethod("PAYSTACK");
+    }
+  }, [isFirstOrder, paymentMethod, setPaymentMethod]);
+
+  const allOptions: { value: PaymentMethodType; label: string; description: string }[] = [
     {
       value: "CASH_ON_DELIVERY",
       label: "Cash on Delivery",
@@ -31,13 +41,22 @@ export function PaymentMethod({
     },
     {
       value: "PAYSTACK",
-      label: "Paystack",
-      description: "Pay with card, mobile money, or bank",
+      label: "M-Pesa / Paystack",
+      description: "Pay with M-Pesa, card, or bank",
     },
   ];
 
+  const options = isFirstOrder
+    ? allOptions.filter((o) => o.value === "PAYSTACK")
+    : allOptions;
+
   return (
     <div className="space-y-6">
+      {isFirstOrder && (
+        <p className="rounded-md bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+          First order? Pay with M-Pesa (online) for a secure first purchase. Cash on delivery is available from your next order.
+        </p>
+      )}
       <div className="space-y-3">
         {options.map((opt) => (
           <label
