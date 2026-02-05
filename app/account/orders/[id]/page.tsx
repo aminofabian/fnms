@@ -123,7 +123,7 @@ export default function OrderDetailPage() {
           <div className="flex items-center gap-3">
             <CreditCard className="h-4 w-4 text-muted-foreground" />
             <span className="text-muted-foreground">
-              {order.paymentMethod === "CASH_ON_DELIVERY" ? "Cash on Delivery" : "M-Pesa"}
+              {order.paymentMethod === "CASH_ON_DELIVERY" ? "Cash on Delivery" : "Paystack"}
             </span>
           </div>
         </div>

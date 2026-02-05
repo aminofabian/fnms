@@ -44,8 +44,8 @@ export async function PUT(
 
     const currentStatus = String(rows[0].status);
 
-    // If cancelling, restore stock
-    if (status === "CANCELLED" && currentStatus !== "CANCELLED") {
+    // If cancelling, restore stock (DB stores lowercase)
+    if (status === "CANCELLED" && currentStatus !== "cancelled") {
       const { rows: items } = await db.execute({
         sql: "SELECT product_id, quantity FROM order_items WHERE order_id = ?",
         args: [id],
@@ -59,10 +59,10 @@ export async function PUT(
       }
     }
 
-    // Update order status
+    // Update order status (DB uses lowercase to match schema CHECK)
     await db.execute({
       sql: `UPDATE orders SET status = ?, updated_at = datetime('now') WHERE id = ?`,
-      args: [status, id],
+      args: [status.toLowerCase(), id],
     });
 
     // Log status change (optional: could add to a status_history table)

@@ -29,7 +29,7 @@ export async function POST(
     const status = String(order.status);
 
     // Only allow cancellation of pending or confirmed orders
-    if (status !== "PENDING" && status !== "CONFIRMED") {
+    if (status !== "pending" && status !== "confirmed") {
       return NextResponse.json(
         { error: "Cannot cancel order in current status" },
         { status: 400 }
@@ -38,7 +38,7 @@ export async function POST(
 
     // Update order status
     await db.execute({
-      sql: "UPDATE orders SET status = 'CANCELLED', updated_at = datetime('now') WHERE id = ?",
+      sql: "UPDATE orders SET status = 'cancelled', updated_at = datetime('now') WHERE id = ?",
       args: [id],
     });
 

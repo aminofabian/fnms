@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { CheckoutSteps } from "@/components/checkout/checkout-steps";
 import { DeliveryForm } from "@/components/checkout/delivery-form";
 import { ReviewStep } from "@/components/checkout/review-step";
@@ -14,11 +15,13 @@ import type { CheckoutStep } from "@/types/checkout";
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const { step, setStep, delivery, paymentMethod, reset: resetCheckout } = useCheckoutStore();
-  const { items, clearCart, getSubtotalCents } = useCartStore();
+  const { items, clearCart } = useCartStore();
   const { selectedArea } = useServiceAreaStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paystackEmail, setPaystackEmail] = useState("");
 
   if (items.length === 0) {
     return (
@@ -46,6 +49,12 @@ export default function CheckoutPage() {
       return;
     }
 
+    const email = session?.user?.email ?? (paymentMethod === "PAYSTACK" ? paystackEmail.trim() : null);
+    if (paymentMethod === "PAYSTACK" && !email) {
+      setError("Please enter your email for payment.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -70,12 +79,27 @@ export default function CheckoutPage() {
         throw new Error(data.error ?? "Failed to create order");
       }
 
-      const { orderNumber } = await res.json();
+      const { orderNumber, orderId } = (await res.json()) as { orderNumber: string; orderId: number };
 
-      // Clear stores
+      if (paymentMethod === "PAYSTACK") {
+        const initRes = await fetch("/api/paystack/initialize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId, orderNumber, email }),
+        });
+        if (!initRes.ok) {
+          const data = await initRes.json();
+          throw new Error(data.error ?? "Failed to start payment");
+        }
+        const { authorization_url } = (await initRes.json()) as { authorization_url: string };
+        clearCart();
+        resetCheckout();
+        window.location.href = authorization_url;
+        return;
+      }
+
       clearCart();
       resetCheckout();
-
       router.push(`/checkout/success?order=${orderNumber}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -109,6 +133,9 @@ export default function CheckoutPage() {
           onBack={() => goToStep("review")}
           onPlaceOrder={handlePlaceOrder}
           loading={loading}
+          paystackEmail={paystackEmail}
+          onPaystackEmailChange={setPaystackEmail}
+          hasSessionEmail={Boolean(session?.user?.email)}
         />
       )}
     </div>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { sendOrderConfirmation } from "@/lib/email";
 
 interface OrderItemInput {
   productId: number;
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
 
     const { delivery, paymentMethod, items } = body as {
       delivery: DeliveryInput;
-      paymentMethod: "MPESA" | "CASH_ON_DELIVERY";
+      paymentMethod: "PAYSTACK" | "CASH_ON_DELIVERY";
       items: OrderItemInput[];
     };
 
@@ -112,7 +113,7 @@ export async function POST(request: Request) {
       args: [
         orderNumber,
         session?.user?.id ?? null,
-        "PENDING",
+        "pending",
         subtotalCents,
         deliveryFeeCents,
         totalCents,
@@ -122,23 +123,57 @@ export async function POST(request: Request) {
         delivery.deliveryAddress,
         delivery.deliveryNotes ?? null,
         paymentMethod,
-        paymentMethod === "CASH_ON_DELIVERY" ? "PENDING" : "AWAITING",
+        paymentMethod === "CASH_ON_DELIVERY" ? "pending" : "awaiting", // Paystack: awaiting until webhook confirms
       ],
     });
 
     const orderId = Number(lastInsertRowid);
 
-    // Create order items and reduce stock
+    // Build item summaries for email and create order items + reduce stock
+    const itemSummaries: { name: string; quantity: number; unitPriceCents: number }[] = [];
+
     for (const item of items) {
+      const { rows: productRows } = await db.execute({
+        sql: "SELECT name FROM products WHERE id = ?",
+        args: [item.productId],
+      });
+      const productName = productRows.length > 0 ? String(productRows[0].name) : "Product";
+      const totalCents = item.priceCents * item.quantity;
+      itemSummaries.push({ name: productName, quantity: item.quantity, unitPriceCents: item.priceCents });
+
       await db.execute({
-        sql: `INSERT INTO order_items (order_id, product_id, variant_id, quantity, unit_price_cents)
-              VALUES (?, ?, ?, ?, ?)`,
-        args: [orderId, item.productId, item.variantId ?? null, item.quantity, item.priceCents],
+        sql: `INSERT INTO order_items (order_id, product_id, variant_id, name, quantity, price_cents, total_cents, unit_price_cents)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          orderId,
+          item.productId,
+          item.variantId ?? null,
+          productName,
+          item.quantity,
+          item.priceCents,
+          totalCents,
+          item.priceCents,
+        ],
       });
 
       await db.execute({
         sql: "UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?",
         args: [item.quantity, item.productId],
+      });
+    }
+
+    // Send order confirmation email (non-blocking; don't fail the request if email fails)
+    const recipientEmail = session?.user?.email;
+    if (recipientEmail && typeof recipientEmail === "string") {
+      sendOrderConfirmation(recipientEmail, {
+        orderNumber,
+        totalCents,
+        items: itemSummaries,
+        recipientName: delivery.recipientName,
+        deliveryAddress: delivery.deliveryAddress,
+        paymentMethod: paymentMethod === "PAYSTACK" ? "Paystack" : "Cash on delivery",
+      }).then((r) => {
+        if (!r.success) console.error("[Orders] Confirmation email failed:", r.error);
       });
     }
 

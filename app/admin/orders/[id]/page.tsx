@@ -173,7 +173,7 @@ export default function AdminOrderDetailPage() {
             <div className="flex items-center gap-3 text-sm">
               <CreditCard className="h-4 w-4 text-muted-foreground" />
               <span className="text-foreground">
-                {order.paymentMethod === "CASH_ON_DELIVERY" ? "Cash on Delivery" : "M-Pesa"}
+                {order.paymentMethod === "CASH_ON_DELIVERY" ? "Cash on Delivery" : "Paystack"}
               </span>
               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                 order.paymentStatus === "PAID"

@@ -12,7 +12,7 @@ export const deliverySchema = z.object({
 });
 
 export const paymentSchema = z.object({
-  paymentMethod: z.enum(["MPESA", "CASH_ON_DELIVERY"]),
+  paymentMethod: z.enum(["PAYSTACK", "CASH_ON_DELIVERY"]),
 });
 
 export const checkoutSchema = deliverySchema.merge(paymentSchema);

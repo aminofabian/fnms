@@ -8,7 +8,7 @@ export type OrderStatus =
 
 export type PaymentStatus = "PENDING" | "AWAITING" | "PAID" | "FAILED" | "REFUNDED";
 
-export type PaymentMethod = "MPESA" | "CASH_ON_DELIVERY";
+export type PaymentMethod = "PAYSTACK" | "CASH_ON_DELIVERY";
 
 export interface OrderItem {
   id: number;

@@ -167,7 +167,7 @@ export async function POST(
     const { rows: orderRows } = await db.execute({
       sql: `SELECT 1 FROM order_items oi
             JOIN orders o ON oi.order_id = o.id
-            WHERE o.user_id = ? AND oi.product_id = ? AND o.status = 'DELIVERED'
+            WHERE o.user_id = ? AND oi.product_id = ? AND o.status = 'delivered'
             LIMIT 1`,
       args: [userId, productId],
     });

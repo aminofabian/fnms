@@ -7,9 +7,20 @@ interface PaymentMethodProps {
   onBack: () => void;
   onPlaceOrder: () => void;
   loading?: boolean;
+  /** Required when payment is Paystack and user is not logged in */
+  paystackEmail?: string;
+  onPaystackEmailChange?: (email: string) => void;
+  hasSessionEmail?: boolean;
 }
 
-export function PaymentMethod({ onBack, onPlaceOrder, loading }: PaymentMethodProps) {
+export function PaymentMethod({
+  onBack,
+  onPlaceOrder,
+  loading,
+  paystackEmail = "",
+  onPaystackEmailChange,
+  hasSessionEmail = false,
+}: PaymentMethodProps) {
   const { paymentMethod, setPaymentMethod } = useCheckoutStore();
 
   const options: { value: PaymentMethodType; label: string; description: string }[] = [
@@ -19,9 +30,9 @@ export function PaymentMethod({ onBack, onPlaceOrder, loading }: PaymentMethodPr
       description: "Pay when your order arrives",
     },
     {
-      value: "MPESA",
-      label: "M-Pesa",
-      description: "Pay via M-Pesa STK Push",
+      value: "PAYSTACK",
+      label: "Paystack",
+      description: "Pay with card, mobile money, or bank",
     },
   ];
 
@@ -53,6 +64,22 @@ export function PaymentMethod({ onBack, onPlaceOrder, loading }: PaymentMethodPr
         ))}
       </div>
 
+      {paymentMethod === "PAYSTACK" && !hasSessionEmail && (
+        <div className="space-y-2">
+          <label htmlFor="paystack-email" className="block text-sm font-medium text-foreground">
+            Email for payment receipt
+          </label>
+          <input
+            id="paystack-email"
+            type="email"
+            value={paystackEmail}
+            onChange={(e) => onPaystackEmailChange?.(e.target.value)}
+            placeholder="you@example.com"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+      )}
+
       <div className="flex gap-3">
         <button
           type="button"
@@ -64,10 +91,13 @@ export function PaymentMethod({ onBack, onPlaceOrder, loading }: PaymentMethodPr
         <button
           type="button"
           onClick={onPlaceOrder}
-          disabled={loading}
-          className="flex-1 rounded-md bg-primary px-4 py-3 font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+disabled={
+          loading ||
+          (paymentMethod === "PAYSTACK" && !hasSessionEmail && !paystackEmail?.trim())
+        }
+        className="flex-1 rounded-md bg-primary px-4 py-3 font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
         >
-          {loading ? "Placing order..." : "Place Order"}
+          {loading ? (paymentMethod === "PAYSTACK" ? "Redirecting to payment..." : "Placing order...") : "Place Order"}
         </button>
       </div>
     </div>

@@ -38,12 +38,12 @@ export async function GET() {
       // Today's sales
       db.execute({
         sql: `SELECT COALESCE(SUM(total_cents), 0) as total FROM orders 
-              WHERE date(created_at) = date(?) AND status != 'CANCELLED'`,
+              WHERE date(created_at) = date(?) AND status != 'cancelled'`,
         args: [todayStr],
       }),
       // Pending orders
       db.execute({
-        sql: `SELECT COUNT(*) as count FROM orders WHERE status = 'PENDING'`,
+        sql: `SELECT COUNT(*) as count FROM orders WHERE status = 'pending'`,
         args: [],
       }),
       // Total orders (all time)
@@ -79,7 +79,7 @@ export async function GET() {
               JOIN products p ON oi.product_id = p.id
               JOIN orders o ON oi.order_id = o.id
               WHERE o.created_at >= datetime('now', '-30 days')
-                AND o.status != 'CANCELLED'
+                AND o.status != 'cancelled'
               GROUP BY p.id
               ORDER BY total_sold DESC
               LIMIT 5`,
@@ -97,7 +97,7 @@ export async function GET() {
                      COALESCE(SUM(total_cents), 0) as sales
               FROM orders
               WHERE created_at >= datetime('now', '-7 days')
-                AND status != 'CANCELLED'
+                AND status != 'cancelled'
               GROUP BY date(created_at)
               ORDER BY date ASC`,
         args: [],

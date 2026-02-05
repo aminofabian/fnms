@@ -6,7 +6,7 @@ export interface DeliveryInfo {
   deliveryNotes?: string;
 }
 
-export type PaymentMethod = "MPESA" | "CASH_ON_DELIVERY";
+export type PaymentMethod = "PAYSTACK" | "CASH_ON_DELIVERY";
 
 export interface CheckoutData extends DeliveryInfo {
   paymentMethod: PaymentMethod;

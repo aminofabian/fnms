@@ -9,6 +9,7 @@
     "lint": "eslint",
     "db:init": "bun run scripts/init-db.ts",
     "db:migrate-areas": "bun run scripts/migrate-service-areas.ts",
+    "db:migrate-orders": "bun run scripts/migrate-orders.ts",
     "db:seed-areas": "bun run scripts/seed-areas.ts",
     "db:seed-categories": "bun run scripts/seed-categories.ts",
     "db:seed": "bun run scripts/seed-areas.ts && bun run scripts/seed-categories.ts && bun run scripts/seed-products.ts",
@@ -29,6 +30,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.71.1",
+    "resend": "^6.9.1",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.3.6",
     "zustand": "^5.0.11"

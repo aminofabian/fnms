@@ -34,7 +34,7 @@ function SuccessContent() {
           Continue Shopping
         </Link>
         <Link
-          href="/orders"
+          href="/account/orders"
           className="rounded-md border border-border px-6 py-3 font-medium text-foreground hover:bg-accent"
         >
           View Orders
