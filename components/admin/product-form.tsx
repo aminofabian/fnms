@@ -74,10 +74,17 @@ export function ProductForm({ product, categories }: ProductFormProps) {
       }
 
       const slug = json.slug ?? parsed.data.slug;
-      const existingUrls = new Set(product?.images?.map((i) => i.url) ?? []);
-      let sortOrder = product?.images?.length ?? 0;
+      const currentUrls = new Set(imageUrls.filter(Boolean));
+      const existingImages = product?.images ?? [];
+      for (const img of existingImages) {
+        if (!currentUrls.has(img.url)) {
+          await fetch(`/api/products/${slug}/images/${img.id}`, { method: "DELETE" });
+        }
+      }
+      let sortOrder = existingImages.length;
       for (const imgUrl of imageUrls) {
-        if (!imgUrl || existingUrls.has(imgUrl)) continue;
+        if (!imgUrl) continue;
+        if (existingImages.some((i) => i.url === imgUrl)) continue;
         await fetch(`/api/products/${slug}/images`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
