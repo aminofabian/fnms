@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { productSchema } from "@/lib/validations/product";
 import type { Product, ProductImage, ProductVariant } from "@/types/product";
@@ -134,6 +135,8 @@ export async function PUT(
     });
 
     const newSlug = parsed.data.slug ?? slug;
+    revalidatePath(`/products/${slug}`);
+    revalidatePath(`/products/${newSlug}`);
     const product = await getProductBySlug(newSlug);
     return NextResponse.json(product);
   } catch (e) {
