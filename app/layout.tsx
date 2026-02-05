@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
+import { SessionProvider } from "@/components/providers/session-provider";
+import { JsonLdOrganization } from "@/components/seo/json-ld";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -9,9 +11,9 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Coming Soon | FnM's Mini Mart",
-  description: "FnM's Mini Mart is coming online soon. Fresh groceries, everyday essentials, and more—all delivered to your door. Contact us at support@fmns.co.ke or 0721530181",
-  keywords: ["grocery", "mini mart", "online shopping", "fresh produce", "delivery", "Kenya", "groceries", "essentials"],
+  title: "FnM's Mini Mart | Fresh Groceries Delivered",
+  description: "Shop fresh groceries, everyday essentials, and more—all delivered to your door in Nairobi. Fast delivery, great prices.",
+  keywords: ["grocery", "mini mart", "online shopping", "fresh produce", "delivery", "Kenya", "groceries", "essentials", "Nairobi"],
   authors: [{ name: "FnM's Mini Mart" }],
   creator: "FnM's Mini Mart",
   publisher: "FnM's Mini Mart",
@@ -20,13 +22,13 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://fmns.co.ke"),
+  metadataBase: new URL(process.env.NEXTAUTH_URL || process.env.SITE_URL || "https://fmns.co.ke"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Coming Soon | FnM's Mini Mart",
-    description: "FnM's Mini Mart is coming online soon. Fresh groceries, everyday essentials, and more—all delivered to your door.",
+    title: "FnM's Mini Mart | Fresh Groceries Delivered",
+    description: "Shop fresh groceries, everyday essentials, and more—all delivered to your door in Nairobi.",
     url: "https://fmns.co.ke",
     siteName: "FnM's Mini Mart",
     locale: "en_KE",
@@ -42,8 +44,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Coming Soon | FnM's Mini Mart",
-    description: "Fresh groceries, everyday essentials, and more—all delivered to your door.",
+    title: "FnM's Mini Mart | Fresh Groceries Delivered",
+    description: "Shop fresh groceries, everyday essentials, and more—all delivered to your door.",
     images: ["/fnms.png"],
   },
   icons: {
@@ -62,11 +64,12 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "FnM's Mini Mart",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 5,
-  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#9ACD32" },
     { media: "(prefers-color-scheme: dark)", color: "#9ACD32" },
@@ -84,7 +87,8 @@ export default function RootLayout({
         className={`${outfit.variable} font-sans antialiased`}
         style={{ fontFamily: 'var(--font-outfit), sans-serif' }}
       >
-        {children}
+        <JsonLdOrganization />
+        <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
   );

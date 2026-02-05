@@ -1,0 +1,203 @@
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
+interface OrderItemInput {
+  productId: number;
+  variantId?: number | null;
+  quantity: number;
+  priceCents: number;
+}
+
+interface DeliveryInput {
+  serviceAreaId: number;
+  recipientName: string;
+  recipientPhone: string;
+  deliveryAddress: string;
+  deliveryNotes?: string;
+}
+
+function generateOrderNumber(): string {
+  const now = new Date();
+  const datePart = now.toISOString().slice(0, 10).replace(/-/g, "");
+  const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `FN-${datePart}-${randomPart}`;
+}
+
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    const body = await request.json();
+
+    const { delivery, paymentMethod, items } = body as {
+      delivery: DeliveryInput;
+      paymentMethod: "MPESA" | "CASH_ON_DELIVERY";
+      items: OrderItemInput[];
+    };
+
+    // Validate items exist
+    if (!items || items.length === 0) {
+      return NextResponse.json({ error: "No items in order" }, { status: 400 });
+    }
+
+    // Validate delivery
+    if (
+      !delivery ||
+      !delivery.serviceAreaId ||
+      !delivery.recipientName ||
+      !delivery.recipientPhone ||
+      !delivery.deliveryAddress
+    ) {
+      return NextResponse.json({ error: "Missing delivery information" }, { status: 400 });
+    }
+
+    // Get service area for delivery fee
+    const { rows: areaRows } = await db.execute({
+      sql: "SELECT delivery_fee_cents, min_order_cents FROM service_areas WHERE id = ?",
+      args: [delivery.serviceAreaId],
+    });
+
+    if (areaRows.length === 0) {
+      return NextResponse.json({ error: "Invalid delivery area" }, { status: 400 });
+    }
+
+    const deliveryFeeCents = Number(areaRows[0].delivery_fee_cents) || 0;
+    const minOrderCents = Number(areaRows[0].min_order_cents) || 0;
+
+    // Validate stock and calculate subtotal
+    let subtotalCents = 0;
+    for (const item of items) {
+      const { rows: productRows } = await db.execute({
+        sql: "SELECT stock_quantity FROM products WHERE id = ?",
+        args: [item.productId],
+      });
+
+      if (productRows.length === 0) {
+        return NextResponse.json(
+          { error: `Product ${item.productId} not found` },
+          { status: 400 }
+        );
+      }
+
+      const stockQty = Number(productRows[0].stock_quantity);
+      if (stockQty < item.quantity) {
+        return NextResponse.json(
+          { error: `Insufficient stock for product ${item.productId}` },
+          { status: 400 }
+        );
+      }
+
+      subtotalCents += item.priceCents * item.quantity;
+    }
+
+    // Check minimum order
+    if (minOrderCents > 0 && subtotalCents < minOrderCents) {
+      return NextResponse.json(
+        { error: `Minimum order is KES ${(minOrderCents / 100).toFixed(2)}` },
+        { status: 400 }
+      );
+    }
+
+    const totalCents = subtotalCents + deliveryFeeCents;
+    const orderNumber = generateOrderNumber();
+
+    // Create order
+    const { lastInsertRowid } = await db.execute({
+      sql: `INSERT INTO orders (
+        order_number, user_id, status, subtotal_cents, delivery_fee_cents, total_cents,
+        service_area_id, recipient_name, recipient_phone, delivery_address, delivery_notes,
+        payment_method, payment_status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        orderNumber,
+        session?.user?.id ?? null,
+        "PENDING",
+        subtotalCents,
+        deliveryFeeCents,
+        totalCents,
+        delivery.serviceAreaId,
+        delivery.recipientName,
+        delivery.recipientPhone,
+        delivery.deliveryAddress,
+        delivery.deliveryNotes ?? null,
+        paymentMethod,
+        paymentMethod === "CASH_ON_DELIVERY" ? "PENDING" : "AWAITING",
+      ],
+    });
+
+    const orderId = Number(lastInsertRowid);
+
+    // Create order items and reduce stock
+    for (const item of items) {
+      await db.execute({
+        sql: `INSERT INTO order_items (order_id, product_id, variant_id, quantity, unit_price_cents)
+              VALUES (?, ?, ?, ?, ?)`,
+        args: [orderId, item.productId, item.variantId ?? null, item.quantity, item.priceCents],
+      });
+
+      await db.execute({
+        sql: "UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?",
+        args: [item.quantity, item.productId],
+      });
+    }
+
+    // Clear user's cart if logged in
+    if (session?.user?.id) {
+      await db.execute({
+        sql: "DELETE FROM cart_items WHERE user_id = ?",
+        args: [session.user.id],
+      });
+    }
+
+    return NextResponse.json({ orderNumber, orderId });
+  } catch (e) {
+    console.error("Order POST error:", e);
+    return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const orderNumber = searchParams.get("orderNumber");
+
+    if (orderNumber) {
+      // Single order
+      const { rows } = await db.execute({
+        sql: `SELECT * FROM orders WHERE order_number = ? AND user_id = ?`,
+        args: [orderNumber, session.user.id],
+      });
+
+      if (rows.length === 0) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      }
+
+      const { rows: itemRows } = await db.execute({
+        sql: `SELECT oi.*, p.name as product_name, p.slug as product_slug
+              FROM order_items oi
+              JOIN products p ON p.id = oi.product_id
+              WHERE oi.order_id = ?`,
+        args: [rows[0].id],
+      });
+
+      return NextResponse.json({ order: rows[0], items: itemRows });
+    }
+
+    // All orders for user
+    const { rows } = await db.execute({
+      sql: "SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC",
+      args: [session.user.id],
+    });
+
+    return NextResponse.json(rows);
+  } catch (e) {
+    console.error("Order GET error:", e);
+    return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
+  }
+}

@@ -48,25 +48,25 @@
 
 :root {
   --radius: 0.625rem;
-  /* Brand colors: Light green background, red primary, black text */
+  /* Brand colors: Light green background, orange primary, black text */
   --background: #9ACD32;
   --foreground: #000000;
   --card: rgba(255, 255, 255, 0.95);
   --card-foreground: #000000;
   --popover: rgba(255, 255, 255, 0.95);
   --popover-foreground: #000000;
-  --primary: #FF0000;
+  --primary: #EA580C;
   --primary-foreground: #FFFFFF;
   --secondary: rgba(154, 205, 50, 0.2);
   --secondary-foreground: #000000;
   --muted: rgba(154, 205, 50, 0.3);
   --muted-foreground: rgba(0, 0, 0, 0.7);
-  --accent: rgba(255, 0, 0, 0.1);
+  --accent: rgba(234, 88, 12, 0.1);
   --accent-foreground: #000000;
-  --destructive: #FF0000;
+  --destructive: #C2410C;
   --border: rgba(0, 0, 0, 0.1);
   --input: rgba(255, 255, 255, 0.9);
-  --ring: rgba(255, 0, 0, 0.3);
+  --ring: rgba(234, 88, 12, 0.3);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -74,12 +74,12 @@
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: rgba(255, 255, 255, 0.95);
   --sidebar-foreground: #000000;
-  --sidebar-primary: #FF0000;
+  --sidebar-primary: #EA580C;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: rgba(154, 205, 50, 0.2);
   --sidebar-accent-foreground: #000000;
   --sidebar-border: rgba(0, 0, 0, 0.1);
-  --sidebar-ring: rgba(255, 0, 0, 0.3);
+  --sidebar-ring: rgba(234, 88, 12, 0.3);
 }
 
 .dark {
@@ -97,7 +97,7 @@
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
+  --destructive: oklch(0.576 0.208 42.5);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
@@ -127,6 +127,15 @@
     -moz-osx-font-smoothing: grayscale;
   }
   
+  /* Hide scrollbar but allow scrolling */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
   /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
@@ -148,5 +157,20 @@
   
   ::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(180deg, #7CB342, #FFA500);
+  }
+
+  /* Home page section stagger (optional use) */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-fade-in-up {
+    animation: fade-in-up 0.4s ease-out forwards;
   }
 }
