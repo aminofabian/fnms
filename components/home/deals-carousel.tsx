@@ -16,7 +16,11 @@ export function DealsCarousel({ deals }: DealsCarouselProps) {
           <Flame className="h-3.5 w-3.5" aria-hidden />
           Deals
         </span>
-        <h2 className="text-xl font-bold text-foreground sm:text-2xl">
+        <h2
+          id="deals-heading"
+          className="text-lg font-semibold sm:text-xl"
+          style={{ color: "var(--nav-green)" } as React.CSSProperties}
+        >
           Today&apos;s offers
         </h2>
       </div>

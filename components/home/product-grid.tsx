@@ -8,9 +8,11 @@ import type { Product } from "@/types/product";
 interface ProductGridProps {
   products: Product[];
   title?: string;
+  titleId?: string;
+  titleClassName?: string;
 }
 
-export function ProductGrid({ products, title }: ProductGridProps) {
+export function ProductGrid({ products, title, titleId, titleClassName }: ProductGridProps) {
   const addItem = useCartStore((s) => s.addItem);
 
   function handleAddToCart(e: React.MouseEvent, product: Product) {
@@ -36,7 +38,10 @@ export function ProductGrid({ products, title }: ProductGridProps) {
   return (
     <div>
       {title && (
-        <h2 className="mb-5 text-xl font-bold text-foreground sm:text-2xl">
+        <h2
+          id={titleId}
+          className={`mb-5 text-lg font-semibold text-foreground sm:text-xl ${titleClassName ?? ""}`}
+        >
           {title}
         </h2>
       )}

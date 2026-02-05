@@ -39,12 +39,17 @@ export function AreaSelector() {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
+        className="flex flex-col items-start gap-0 rounded-md px-2 py-1.5 text-left hover:bg-accent sm:flex-row sm:items-center sm:gap-1.5 sm:px-3 sm:py-2"
       >
-        <MapPin className="h-4 w-4 text-primary" />
-        <span className="hidden sm:inline text-muted-foreground">Deliver to:</span>
-        <span className="font-medium">{selectedArea?.name ?? "Select area"}</span>
-        <ChevronDown className="h-4 w-4" />
+        <div className="flex items-center gap-1.5">
+          <MapPin className="h-4 w-4 shrink-0 text-primary" />
+          <span className="text-xs text-foreground sm:text-sm">Deliver to</span>
+        </div>
+        <span className="text-xs font-semibold text-primary sm:text-sm">
+          {selectedArea?.name ?? "Select area"}
+        </span>
+        <span className="text-xs font-medium text-primary underline sm:ml-0.5">Change</span>
+        <ChevronDown className="absolute right-1 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground sm:static sm:translate-y-0" />
       </button>
 
       {open && (

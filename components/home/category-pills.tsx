@@ -11,13 +11,13 @@ interface CategoryPillsProps {
 
 export function CategoryPills({ categories, activeSlug }: CategoryPillsProps) {
   return (
-    <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 pt-1">
+    <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 py-1">
       <Link
         href="/"
         className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
           !activeSlug
             ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/30"
-            : "bg-card text-foreground shadow-sm ring-1 ring-black/5 hover:bg-white hover:ring-primary/20"
+            : "bg-card text-foreground shadow-sm ring-1 ring-black/10 hover:bg-card hover:ring-primary/25"
         }`}
       >
         <LayoutGrid className="h-4 w-4 shrink-0" aria-hidden />
@@ -32,7 +32,7 @@ export function CategoryPills({ categories, activeSlug }: CategoryPillsProps) {
             className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
               isActive
                 ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/30"
-                : "bg-card text-foreground shadow-sm ring-1 ring-black/5 hover:bg-white hover:ring-primary/20"
+                : "bg-card text-foreground shadow-sm ring-1 ring-black/10 hover:bg-card hover:ring-primary/25"
             }`}
           >
             {cat.imageUrl ? (

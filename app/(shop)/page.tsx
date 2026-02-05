@@ -1,18 +1,15 @@
+import Link from "next/link";
+import Image from "next/image";
 import { db } from "@/lib/db";
 import { Header } from "@/components/layout/header";
-import { HeroBanner } from "@/components/home/hero-banner";
-import { DeliveryAreasBlock } from "@/components/home/delivery-areas-block";
-import { AreaPromptBanner } from "@/components/home/area-prompt-banner";
+import { TopSellersSidebar } from "@/components/home/top-sellers-sidebar";
 import { CategoryPills } from "@/components/home/category-pills";
-import { FeaturedCategories } from "@/components/home/featured-categories";
 import { ProductGrid } from "@/components/home/product-grid";
-import { HowItWorks } from "@/components/home/how-it-works";
 import { QuickCart } from "@/components/home/quick-cart";
 import { DealsCarousel } from "../../components/home/deals-carousel";
+import { FabMenu } from "@/components/layout/fab-menu";
 import type { Category } from "@/types/category";
 import type { Product, ProductImage } from "@/types/product";
-import type { ServiceArea } from "@/types/service-area";
-
 async function getCategories(): Promise<Category[]> {
   const { rows } = await db.execute(
     "SELECT * FROM categories ORDER BY sort_order ASC"
@@ -81,30 +78,10 @@ async function getProducts(): Promise<Product[]> {
   return products;
 }
 
-async function getServiceAreas(): Promise<ServiceArea[]> {
-  const { rows } = await db.execute(
-    "SELECT * FROM service_areas ORDER BY name ASC"
-  );
-  return rows
-    .map((r) => ({
-      id: Number(r.id),
-      slug: String(r.slug),
-      name: String(r.name),
-      deliveryFeeCents: r.delivery_fee_cents != null ? Number(r.delivery_fee_cents) : 0,
-      minOrderCents: r.min_order_cents != null ? Number(r.min_order_cents) : 0,
-      estimatedTime: r.estimated_time ? String(r.estimated_time) : null,
-      isActive: r.is_active != null ? Boolean(r.is_active) : true,
-      createdAt: String(r.created_at),
-      updatedAt: r.updated_at ? String(r.updated_at) : String(r.created_at),
-    }))
-    .filter((area) => area.isActive);
-}
-
 export default async function HomePage() {
-  const [categories, products, areas] = await Promise.all([
+  const [categories, products] = await Promise.all([
     getCategories(),
     getProducts(),
-    getServiceAreas(),
   ]);
 
   const deals = products.filter(
@@ -114,49 +91,92 @@ export default async function HomePage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen pb-28">
-        <HeroBanner areas={areas} />
+      <main className="min-h-screen pb-24">
+        {/* Green strip above hero */}
+        <div
+          className="px-4 py-2.5 text-center text-sm font-semibold uppercase tracking-wide text-white"
+          style={{ backgroundColor: "var(--nav-green)" }}
+        >
+          Shop FnM&apos;s — Fresh for less every day
+        </div>
 
-        <div className="container mx-auto px-4 py-4 sm:py-5">
-          {/* Delivery locations first */}
-          <DeliveryAreasBlock areas={areas} />
-          <AreaPromptBanner />
+        {/* Hero banner with SHOP NOW overlay */}
+        <section className="relative w-full border-b border-black/10 bg-muted">
+          <Link href="/products" className="relative mx-auto flex max-w-[1150px] justify-center">
+            <Image
+              src="/banner.png"
+              alt="FnM's — Fresh groceries, delivered"
+              width={1150}
+              height={400}
+              className="h-auto max-w-full w-auto"
+              priority
+              sizes="(max-width: 1150px) 100vw, 1150px"
+            />
+            <span className="absolute bottom-4 right-4 rounded-md bg-primary px-4 py-2.5 text-sm font-bold uppercase text-primary-foreground shadow-md hover:opacity-90 sm:bottom-6 sm:right-8 sm:px-6 sm:py-3 sm:text-base">
+              Shop now
+            </span>
+          </Link>
+        </section>
 
-          {/* Category pills — quick nav */}
-          {categories.length > 0 && (
-            <section className="mb-4 sm:mb-6" aria-label="Browse by category">
-              <h2 className="sr-only">Browse by category</h2>
-              <CategoryPills categories={categories} />
-            </section>
-          )}
+        <div className="container mx-auto max-w-6xl px-4 py-6 sm:py-8">
+          <div className="flex flex-col gap-8 lg:flex-row">
+            {/* Left sidebar — TOP SELLERS */}
+            {categories.length > 0 && (
+              <TopSellersSidebar categories={categories} />
+            )}
 
-          {/* Shop by category — visual grid */}
-          {categories.length > 0 && (
-            <section className="mb-6 sm:mb-8">
-              <FeaturedCategories categories={categories} />
-            </section>
-          )}
+            <div className="min-w-0 flex-1">
+              {/* Most Popular — category pills */}
+              {categories.length > 0 && (
+                <section
+                  className="mb-8 sm:mb-10"
+                  aria-labelledby="categories-heading"
+                >
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                    <h2
+                      id="categories-heading"
+                      className="text-lg font-semibold sm:text-xl"
+                      style={{ color: "var(--nav-green)" }}
+                    >
+                      Most Popular
+                    </h2>
+                    <Link
+                      href="/categories"
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      View all →
+                    </Link>
+                  </div>
+                  <CategoryPills categories={categories} />
+                </section>
+              )}
 
-          {/* Today's offers */}
-          {deals.length > 0 && (
-            <section className="mb-6 sm:mb-8" aria-label="Today's offers">
-              <DealsCarousel deals={deals} />
-            </section>
-          )}
+              {/* Today&apos;s offers */}
+              {deals.length > 0 && (
+                <section
+                  className="mb-8 sm:mb-10"
+                  aria-labelledby="deals-heading"
+                >
+                  <DealsCarousel deals={deals} />
+                </section>
+              )}
 
-          {/* How it works — trust */}
-          <section className="mb-6 sm:mb-8">
-            <HowItWorks />
-          </section>
-
-          {/* All products */}
-          <section className="mb-8" aria-label="All products">
-            <ProductGrid products={products} title="Shop All Products" />
-          </section>
+              {/* All products */}
+              <section aria-labelledby="products-heading">
+                <ProductGrid
+                  products={products}
+                  title="All products"
+                  titleId="products-heading"
+                  titleClassName="[color:var(--nav-green)]"
+                />
+              </section>
+            </div>
+          </div>
         </div>
       </main>
 
       <QuickCart />
+      <FabMenu />
     </>
   );
 }
