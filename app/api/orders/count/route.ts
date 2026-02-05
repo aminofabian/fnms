@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-/** Returns the number of orders for the current user. Used to determine first vs subsequent order (payment rules). */
+/** Returns the number of completed (delivered) orders for the current user. Used to determine first vs subsequent order (COD only after first completed order). */
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -12,7 +12,7 @@ export async function GET() {
     }
 
     const { rows } = await db.execute({
-      sql: "SELECT COUNT(*) as count FROM orders WHERE user_id = ?",
+      sql: "SELECT COUNT(*) as count FROM orders WHERE user_id = ? AND status = 'delivered'",
       args: [session.user.id],
     });
 

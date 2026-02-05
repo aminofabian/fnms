@@ -53,9 +53,10 @@ export function PaymentMethod({
   return (
     <div className="space-y-6">
       {isFirstOrder && (
-        <p className="rounded-md bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-          First order? Pay with M-Pesa (online) for a secure first purchase. Cash on delivery is available from your next order.
-        </p>
+        <div className="rounded-md bg-muted/50 px-3 py-3 text-sm text-muted-foreground space-y-1">
+          <p>Please use M-Pesa for your first order. Cash on delivery will be available after you’ve completed one order with us.</p>
+          <p>If you’d like to text us first: <a href="sms:+254721530181" className="font-medium text-foreground underline hover:no-underline">+254721530181</a></p>
+        </div>
       )}
       <div className="space-y-3">
         {options.map((opt) => (
