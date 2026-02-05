@@ -54,7 +54,11 @@ export async function POST(request: Request) {
             args: [reference],
           });
           if (rows.length > 0) {
-            const order = rows[0] as { id: number; total_cents: number; payment_status: string };
+            const order = rows[0] as unknown as {
+              id: number;
+              total_cents: number;
+              payment_status: string;
+            };
             const expectedAmount = Number(order.total_cents);
             const paidAmount = verifyData.data!.amount;
             // Paystack may return amount in kobo/cents; ensure it matches
