@@ -31,7 +31,7 @@ export async function GET() {
 
     const settings: Record<string, string> = {};
     for (const row of rows) {
-      const r = row as { key: string; value: string | null };
+      const r = row as unknown as { key: string; value: string | null };
       settings[r.key] = r.value ?? "";
     }
 
@@ -86,7 +86,7 @@ export async function PATCH(request: Request) {
     });
     const settings: Record<string, string> = {};
     for (const row of rows) {
-      const r = row as { key: string; value: string | null };
+      const r = row as unknown as { key: string; value: string | null };
       settings[r.key] = r.value ?? "";
     }
 

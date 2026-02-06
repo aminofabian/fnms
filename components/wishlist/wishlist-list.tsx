@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import Link from "next/link";
+import { invalidateWishlist } from "@/lib/wishlist";
 import { WishlistItem } from "./wishlist-item";
 
 interface WishlistProduct {
@@ -42,6 +43,7 @@ export function WishlistList() {
       const res = await fetch(`/api/wishlist/${productId}`, { method: "DELETE" });
       if (res.ok) {
         setItems((prev) => prev.filter((item) => item.productId !== productId));
+        invalidateWishlist();
       }
     } finally {
       setRemoving(null);

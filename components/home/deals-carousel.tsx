@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Flame, ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { useCartStore } from "@/stores/cart-store";
+import { useServiceAreaConfirmStore } from "@/stores/service-area-confirm-store";
 import { WishlistButton } from "@/components/wishlist";
 import type { Product } from "@/types/product";
 
@@ -21,15 +22,28 @@ interface DealCardProps {
 }
 
 function DealCard({ product, imageUrl, price, comparePrice, discount }: DealCardProps) {
+  const items = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
+  const openServiceAreaConfirm = useServiceAreaConfirmStore((s) => s.open);
   const inStock = product.stockQuantity > 0;
 
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
     if (!inStock) return;
-    addItem(product, 1);
-    toast.success("Added to cart", { description: product.name });
+    if (items.length === 0) {
+      openServiceAreaConfirm({
+        product,
+        quantity: 1,
+        onConfirm: () => {
+          addItem(product, 1);
+          toast.success("Added to cart", { description: product.name });
+        },
+      });
+    } else {
+      addItem(product, 1);
+      toast.success("Added to cart", { description: product.name });
+    }
   }
 
   return (

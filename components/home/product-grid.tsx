@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Plus, Package } from "lucide-react";
 import { toast } from "sonner";
 import { useCartStore } from "@/stores/cart-store";
+import { useServiceAreaConfirmStore } from "@/stores/service-area-confirm-store";
 import { WishlistButton } from "@/components/wishlist";
 import type { Product } from "@/types/product";
 
@@ -15,13 +16,26 @@ interface ProductGridProps {
 }
 
 export function ProductGrid({ products, title, titleId, titleClassName }: ProductGridProps) {
+  const items = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
+  const openServiceAreaConfirm = useServiceAreaConfirmStore((s) => s.open);
 
   function handleAddToCart(e: React.MouseEvent, product: Product) {
     e.preventDefault();
     e.stopPropagation();
-    addItem(product, 1);
-    toast.success("Added to cart", { description: product.name });
+    if (items.length === 0) {
+      openServiceAreaConfirm({
+        product,
+        quantity: 1,
+        onConfirm: () => {
+          addItem(product, 1);
+          toast.success("Added to cart", { description: product.name });
+        },
+      });
+    } else {
+      addItem(product, 1);
+      toast.success("Added to cart", { description: product.name });
+    }
   }
 
   if (products.length === 0) {

@@ -5,6 +5,7 @@ import { ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { QuantitySelector } from "./quantity-selector";
 import { useCartStore } from "@/stores/cart-store";
+import { useServiceAreaConfirmStore } from "@/stores/service-area-confirm-store";
 import type { Product } from "@/types/product";
 
 interface AddToCartButtonProps {
@@ -15,19 +16,38 @@ interface AddToCartButtonProps {
 export function AddToCartButton({ product, variantId }: AddToCartButtonProps) {
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
+  const items = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
+  const openServiceAreaConfirm = useServiceAreaConfirmStore((s) => s.open);
   const inStock = product.stockQuantity > 0;
   const maxQty = Math.min(product.stockQuantity, 99);
 
-  function handleAddToCart() {
-    if (!inStock) return;
-    setAdding(true);
+  function doAdd() {
     addItem(product, quantity, variantId);
     toast.success("Added to cart", {
       description: quantity > 1 ? `${quantity} × ${product.name}` : product.name,
     });
     setQuantity(1);
-    setAdding(false);
+  }
+
+  function handleAddToCart() {
+    if (!inStock) return;
+    setAdding(true);
+    if (items.length === 0) {
+      openServiceAreaConfirm({
+        product,
+        quantity,
+        variantId,
+        onConfirm: () => {
+          doAdd();
+          setAdding(false);
+        },
+      });
+      setAdding(false);
+    } else {
+      doAdd();
+      setAdding(false);
+    }
   }
 
   if (!inStock) {

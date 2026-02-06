@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
+import { invalidateWishlist } from "@/lib/wishlist";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -44,6 +45,7 @@ export function WishlistButton({
       if (inWishlist) {
         await fetch(`/api/wishlist/${productId}`, { method: "DELETE" });
         setInWishlist(false);
+        invalidateWishlist();
       } else {
         const res = await fetch("/api/wishlist", {
           method: "POST",
@@ -53,6 +55,7 @@ export function WishlistButton({
         const data = await res.json();
         if (res.ok) {
           setInWishlist(true);
+          invalidateWishlist();
           toast.success(data.message === "Already in wishlist" ? "Already in wishlist" : "Added to wishlist");
         }
       }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Trash2, ShoppingCart, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useCartStore } from "@/stores/cart-store";
+import { useServiceAreaConfirmStore } from "@/stores/service-area-confirm-store";
 import type { Product } from "@/types/product";
 
 interface WishlistProduct {
@@ -49,13 +50,27 @@ export function WishlistItem({
   onRemove,
   removing,
 }: WishlistItemProps) {
+  const items = useCartStore((s) => s.items);
   const addToCart = useCartStore((state) => state.addItem);
+  const openServiceAreaConfirm = useServiceAreaConfirmStore((s) => s.open);
   const inStock = product.stockQuantity > 0 && product.isActive;
 
   function handleAddToCart() {
     if (!inStock) return;
-    addToCart(toProduct(productId, product), 1);
-    toast.success("Added to cart", { description: product.name });
+    const p = toProduct(productId, product);
+    if (items.length === 0) {
+      openServiceAreaConfirm({
+        product: p,
+        quantity: 1,
+        onConfirm: () => {
+          addToCart(p, 1);
+          toast.success("Added to cart", { description: product.name });
+        },
+      });
+    } else {
+      addToCart(p, 1);
+      toast.success("Added to cart", { description: product.name });
+    }
   }
 
   return (

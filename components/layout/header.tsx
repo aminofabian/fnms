@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -158,6 +158,16 @@ function WishlistSummary() {
   const { data: session } = useSession();
   const [count, setCount] = useState<number | null>(null);
 
+  const refetch = useCallback(() => {
+    if (!session?.user) return;
+    fetch("/api/wishlist/count")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { count?: number } | null) => {
+        setCount(typeof data?.count === "number" ? data.count : 0);
+      })
+      .catch(() => setCount(0));
+  }, [session?.user]);
+
   useEffect(() => {
     if (!session?.user) {
       setCount(null);
@@ -165,7 +175,6 @@ function WishlistSummary() {
     }
 
     let cancelled = false;
-
     fetch("/api/wishlist/count")
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { count?: number } | null) => {
@@ -181,6 +190,13 @@ function WishlistSummary() {
       cancelled = true;
     };
   }, [session?.user]);
+
+  useEffect(() => {
+    if (!session?.user) return;
+    const handler = () => refetch();
+    window.addEventListener("fnms-wishlist-changed", handler);
+    return () => window.removeEventListener("fnms-wishlist-changed", handler);
+  }, [session?.user, refetch]);
 
   if (!session?.user) return null;
 

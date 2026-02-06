@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import { Toaster } from "sonner";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { ServiceAreaConfirmProvider } from "@/components/cart/service-area-confirm-provider";
 import { JsonLdOrganization } from "@/components/seo/json-ld";
 import "./globals.css";
 
@@ -92,6 +93,7 @@ export default function RootLayout({
         <SessionProvider>
           {children}
           <Toaster position="top-center" richColors closeButton />
+          <ServiceAreaConfirmProvider />
         </SessionProvider>
       </body>
     </html>
