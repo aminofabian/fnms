@@ -154,6 +154,82 @@ function CartSummary() {
   );
 }
 
+function WishlistSummary() {
+  const { data: session } = useSession();
+  const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!session?.user) {
+      setCount(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    fetch("/api/wishlist/count")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { count?: number } | null) => {
+        if (cancelled) return;
+        setCount(typeof data?.count === "number" ? data.count : 0);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCount(0);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user]);
+
+  if (!session?.user) return null;
+
+  const displayCount = typeof count === "number" ? count : 0;
+
+  return (
+    <>
+      {/* Mobile: full-width button similar to cart */}
+      <Link
+        href="/account/wishlist"
+        aria-label={`Wishlist, ${displayCount} items`}
+        className="flex flex-1 items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm transition-all hover:bg-muted active:scale-[0.99] lg:hidden"
+      >
+        <div className="relative flex shrink-0">
+          <Heart className="h-5 w-5" aria-hidden />
+          {displayCount > 0 && (
+            <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+              {displayCount > 99 ? "99+" : displayCount}
+            </span>
+          )}
+        </div>
+        <div className="min-w-0 flex-1 text-left">
+          <span className="block text-sm font-semibold">Wishlist</span>
+          <span className="text-[11px] text-muted-foreground">
+            {displayCount === 0 ? "No saved items yet" : "Saved items for later"}
+          </span>
+        </div>
+      </Link>
+
+      {/* Desktop: compact icon + label */}
+      <Link
+        href="/account/wishlist"
+        aria-label={`Wishlist, ${displayCount} items`}
+        className="hidden items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:scale-[0.98] lg:flex"
+      >
+        <div className="relative">
+          <Heart className="h-4 w-4" aria-hidden />
+          {displayCount > 0 && (
+            <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+              {displayCount > 99 ? "99+" : displayCount}
+            </span>
+          )}
+        </div>
+        <span>Wishlist</span>
+      </Link>
+    </>
+  );
+}
+
 function WalletBal() {
   const { data: session } = useSession();
   const [balanceCents, setBalanceCents] = useState<number | null>(null);
@@ -286,6 +362,7 @@ export function Header() {
         <HeaderSearch />
         <div className="flex gap-2">
           <WalletBal />
+          <WishlistSummary />
           <CartSummary />
         </div>
       </div>
@@ -311,6 +388,7 @@ export function Header() {
         <div className="flex shrink-0 items-center gap-1">
           <AreaSelector />
           <WalletBal />
+          <WishlistSummary />
           <CartSummary />
           <div className="ml-1 h-8 w-px shrink-0 bg-border" aria-hidden />
           {mounted ? (

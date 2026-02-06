@@ -29,7 +29,7 @@ export async function GET() {
       sql: `SELECT w.id, w.product_id, w.created_at,
                    p.name, p.slug, p.price_cents, p.compare_at_price_cents,
                    p.stock_quantity, p.is_active,
-                   (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1) as image_url
+                   (SELECT url FROM product_images WHERE product_id = p.id LIMIT 1) as image_url
             FROM wishlists w
             JOIN products p ON w.product_id = p.id
             WHERE w.user_id = ?

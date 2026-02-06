@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Plus, Package } from "lucide-react";
 import { useCartStore } from "@/stores/cart-store";
+import { WishlistButton } from "@/components/wishlist";
 import type { Product } from "@/types/product";
 
 interface ProductGridProps {
@@ -106,15 +107,18 @@ export function ProductGrid({ products, title, titleId, titleClassName }: Produc
                       </span>
                     )}
                   </div>
-                  {inStock && (
-                    <button
-                      onClick={(e) => handleAddToCart(e, product)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition hover:opacity-90 active:scale-95"
-                      aria-label={`Add ${product.name} to cart`}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    <WishlistButton productId={product.id} size="sm" />
+                    {inStock && (
+                      <button
+                        onClick={(e) => handleAddToCart(e, product)}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition hover:opacity-90 active:scale-95"
+                        aria-label={`Add ${product.name} to cart`}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </Link>
