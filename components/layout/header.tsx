@@ -187,8 +187,8 @@ export function Header() {
             <Heart className="h-4 w-4" aria-hidden />
             <span>Reorder My Items</span>
           </Link>
-          <a href="tel:+254700000000" className="hover:underline">
-            +254 700 000 000
+          <a href="tel:+254721530181" className="hover:underline">
+            +254 721 530 181
           </a>
         </div>
       </div>
