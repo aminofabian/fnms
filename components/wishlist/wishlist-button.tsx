@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
+import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -44,12 +45,16 @@ export function WishlistButton({
         await fetch(`/api/wishlist/${productId}`, { method: "DELETE" });
         setInWishlist(false);
       } else {
-        await fetch("/api/wishlist", {
+        const res = await fetch("/api/wishlist", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ productId }),
         });
-        setInWishlist(true);
+        const data = await res.json();
+        if (res.ok) {
+          setInWishlist(true);
+          toast.success(data.message === "Already in wishlist" ? "Already in wishlist" : "Added to wishlist");
+        }
       }
     } finally {
       setLoading(false);

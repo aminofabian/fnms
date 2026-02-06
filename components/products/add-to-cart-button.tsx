@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ShoppingCart } from "lucide-react";
+import { toast } from "sonner";
 import { QuantitySelector } from "./quantity-selector";
 import { useCartStore } from "@/stores/cart-store";
 import type { Product } from "@/types/product";
@@ -22,6 +23,9 @@ export function AddToCartButton({ product, variantId }: AddToCartButtonProps) {
     if (!inStock) return;
     setAdding(true);
     addItem(product, quantity, variantId);
+    toast.success("Added to cart", {
+      description: quantity > 1 ? `${quantity} × ${product.name}` : product.name,
+    });
     setQuantity(1);
     setAdding(false);
   }

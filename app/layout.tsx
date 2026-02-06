@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
+import { Toaster } from "sonner";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { JsonLdOrganization } from "@/components/seo/json-ld";
 import "./globals.css";
@@ -88,7 +89,10 @@ export default function RootLayout({
         style={{ fontFamily: 'var(--font-outfit), sans-serif' }}
       >
         <JsonLdOrganization />
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          {children}
+          <Toaster position="top-center" richColors closeButton />
+        </SessionProvider>
       </body>
     </html>
   );

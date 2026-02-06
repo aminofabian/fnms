@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Trash2, ShoppingCart, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import { useCartStore } from "@/stores/cart-store";
 import type { Product } from "@/types/product";
 
@@ -54,6 +55,7 @@ export function WishlistItem({
   function handleAddToCart() {
     if (!inStock) return;
     addToCart(toProduct(productId, product), 1);
+    toast.success("Added to cart", { description: product.name });
   }
 
   return (

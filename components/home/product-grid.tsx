@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Plus, Package } from "lucide-react";
+import { toast } from "sonner";
 import { useCartStore } from "@/stores/cart-store";
 import { WishlistButton } from "@/components/wishlist";
 import type { Product } from "@/types/product";
@@ -20,6 +21,7 @@ export function ProductGrid({ products, title, titleId, titleClassName }: Produc
     e.preventDefault();
     e.stopPropagation();
     addItem(product, 1);
+    toast.success("Added to cart", { description: product.name });
   }
 
   if (products.length === 0) {

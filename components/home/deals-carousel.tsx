@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { Flame, ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
+import { toast } from "sonner";
 import { useCartStore } from "@/stores/cart-store";
 import { WishlistButton } from "@/components/wishlist";
 import type { Product } from "@/types/product";
@@ -28,6 +29,7 @@ function DealCard({ product, imageUrl, price, comparePrice, discount }: DealCard
     e.stopPropagation();
     if (!inStock) return;
     addItem(product, 1);
+    toast.success("Added to cart", { description: product.name });
   }
 
   return (
