@@ -110,7 +110,10 @@ export function PaymentMethod({
 
   const options = isFirstOrder
     ? allOptions.filter(
-        (o) => o.value === "PAYSTACK" || (o.value === "TILL" && hasSession)
+        (o) =>
+          o.value === "PAYSTACK" ||
+          (o.value === "TILL" && hasSession) ||
+          (o.value === "WALLET" && hasSession)
       )
     : allOptions.filter((o) => o.value !== "WALLET" || walletBalanceCents !== undefined);
 
