@@ -1,15 +1,26 @@
 import Link from "next/link";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { db } from "@/lib/db";
+import { ProductsTable } from "@/components/admin/products-table";
 import type { Product } from "@/types/product";
-import type { Category } from "@/types/category";
 
-async function getProducts(): Promise<(Product & { categoryName?: string })[]> {
+function likePattern(s: string): string {
+  const escaped = s.replace(/[%_\\]/g, "\\$&");
+  return `%${escaped}%`;
+}
+
+async function getProducts(search?: string): Promise<(Product & { categoryName?: string })[]> {
+  const pattern = search?.trim() ? likePattern(search.trim()) : null;
   const { rows } = await db.execute({
-    sql: `SELECT p.*, c.name as category_name FROM products p
-          LEFT JOIN categories c ON c.id = p.category_id
-          ORDER BY p.created_at DESC`,
-    args: [],
+    sql: pattern
+      ? `SELECT p.*, c.name as category_name FROM products p
+         LEFT JOIN categories c ON c.id = p.category_id
+         WHERE (p.name LIKE ? OR p.slug LIKE ?)
+         ORDER BY p.created_at DESC`
+      : `SELECT p.*, c.name as category_name FROM products p
+         LEFT JOIN categories c ON c.id = p.category_id
+         ORDER BY p.created_at DESC`,
+    args: pattern ? [pattern, pattern] : [],
   });
 
   return rows.map((row) => {
@@ -32,8 +43,13 @@ async function getProducts(): Promise<(Product & { categoryName?: string })[]> {
   });
 }
 
-export default async function AdminProductsPage() {
-  const products = await getProducts();
+export default async function AdminProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string }>;
+}) {
+  const { search: searchQuery } = await searchParams;
+  const products = await getProducts(searchQuery);
 
   return (
     <div>
@@ -51,6 +67,18 @@ export default async function AdminProductsPage() {
         </Link>
       </div>
 
+      <form method="get" action="/admin/products" className="relative mt-6 max-w-sm">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <input
+          type="search"
+          name="search"
+          defaultValue={searchQuery ?? ""}
+          placeholder="Search products by name or slug..."
+          className="w-full rounded-lg border border-border bg-card py-2 pl-10 pr-4 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+          aria-label="Search products"
+        />
+      </form>
+
       <div className="mt-8">
         {products.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-muted/30 p-12 text-center">
@@ -61,41 +89,7 @@ export default async function AdminProductsPage() {
             </Link>
           </div>
         ) : (
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
-            <table className="w-full">
-              <thead className="border-b border-border bg-muted/50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Product</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Category</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Price</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Stock</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {products.map((p) => (
-                  <tr key={p.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3">
-                      <span className="font-medium text-foreground">{p.name}</span>
-                      <span className="ml-2 text-xs text-muted-foreground">{p.slug}</span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">{p.categoryName ?? "—"}</td>
-                    <td className="px-4 py-3 text-sm">KES {(p.priceCents / 100).toLocaleString()}</td>
-                    <td className="px-4 py-3 text-sm">{p.stockQuantity}</td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/admin/products/${p.id}`}
-                        className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-                      >
-                        <Pencil className="h-4 w-4" />
-                        Edit
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ProductsTable products={products} />
         )}
       </div>
     </div>

@@ -11,9 +11,11 @@ import type { Category } from "@/types/category";
 interface ProductFormProps {
   product?: Product;
   categories: Category[];
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export function ProductForm({ product, categories }: ProductFormProps) {
+export function ProductForm({ product, categories, onSuccess, onCancel }: ProductFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [imageUrls, setImageUrls] = useState<string[]>(product?.images?.map((i) => i.url) ?? []);
@@ -93,8 +95,12 @@ export function ProductForm({ product, categories }: ProductFormProps) {
         sortOrder++;
       }
 
-      router.push("/admin/products");
-      router.refresh();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push("/admin/products");
+        router.refresh();
+      }
     } catch {
       setError("Something went wrong.");
     }
@@ -105,8 +111,11 @@ export function ProductForm({ product, categories }: ProductFormProps) {
     if (!confirm(`Delete "${product.name}"?`)) return;
     const res = await fetch(`/api/products/${product.slug}`, { method: "DELETE" });
     if (res.ok) {
-      router.push("/admin/products");
-      router.refresh();
+      if (onSuccess) onSuccess();
+      else {
+        router.push("/admin/products");
+        router.refresh();
+      }
     }
   }
 
@@ -254,7 +263,11 @@ export function ProductForm({ product, categories }: ProductFormProps) {
           </button>
         )}
         <div className="ml-auto flex gap-3">
-          <button type="button" onClick={() => router.back()} className="rounded-md border border-border px-4 py-2 text-sm hover:bg-accent">
+          <button
+            type="button"
+            onClick={() => (onCancel ? onCancel() : router.back())}
+            className="rounded-md border border-border px-4 py-2 text-sm hover:bg-accent"
+          >
             Cancel
           </button>
           <button
