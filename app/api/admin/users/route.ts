@@ -72,7 +72,7 @@ export async function GET(request: Request) {
       countArgs.push(term, term, term);
     }
     const { rows: countRows } = await db.execute({ sql: countSql, args: countArgs });
-    const total = Number((countRows[0] as { count: number })?.count ?? 0);
+    const total = Number((countRows[0] as unknown as { count: number })?.count ?? 0);
 
     sql += " ORDER BY u.created_at DESC LIMIT ? OFFSET ?";
     args.push(limit, offset);
