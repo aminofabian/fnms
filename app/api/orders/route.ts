@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { sendOrderConfirmation } from "@/lib/email";
 import { sendOrderAlert, sendOrderReceivedSms } from "@/lib/sms";
+import { getWalletBalance, deductForOrder } from "@/lib/wallet";
 
 interface OrderItemInput {
   productId: number;
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
 
     const { delivery, paymentMethod, items } = body as {
       delivery: DeliveryInput;
-      paymentMethod: "PAYSTACK" | "CASH_ON_DELIVERY";
+      paymentMethod: "PAYSTACK" | "CASH_ON_DELIVERY" | "WALLET";
       items: OrderItemInput[];
     };
 
@@ -101,6 +102,27 @@ export async function POST(request: Request) {
       );
     }
 
+    // Wallet: require logged-in user and sufficient balance
+    if (paymentMethod === "WALLET") {
+      if (!session?.user?.id) {
+        return NextResponse.json(
+          { error: "You must be logged in to pay with wallet." },
+          { status: 401 }
+        );
+      }
+      const totalCentsForWallet = subtotalCents + deliveryFeeCents;
+      const balanceCents = await getWalletBalance(session.user.id);
+      if (balanceCents < totalCentsForWallet) {
+        return NextResponse.json(
+          {
+            error:
+              "Insufficient wallet balance. Top up or choose another payment method.",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // First order or guest: only M-Pesa (Paystack); cash on delivery allowed on subsequent orders only
     if (paymentMethod === "CASH_ON_DELIVERY") {
       if (!session?.user?.id) {
@@ -145,7 +167,11 @@ export async function POST(request: Request) {
         delivery.deliveryAddress,
         delivery.deliveryNotes ?? null,
         paymentMethod,
-        paymentMethod === "CASH_ON_DELIVERY" ? "pending" : "awaiting", // Paystack: awaiting until webhook confirms
+        paymentMethod === "WALLET"
+          ? "paid"
+          : paymentMethod === "CASH_ON_DELIVERY"
+            ? "pending"
+            : "awaiting", // Paystack: awaiting until webhook confirms
       ],
     });
 
@@ -184,6 +210,32 @@ export async function POST(request: Request) {
       });
     }
 
+    // Wallet: deduct after order is created; rollback order on failure
+    if (paymentMethod === "WALLET" && session?.user?.id) {
+      const deductResult = await deductForOrder(
+        session.user.id,
+        orderId,
+        totalCents,
+        `Order ${orderNumber}`
+      );
+      if (!deductResult.ok) {
+        for (const item of items) {
+          await db.execute({
+            sql: "UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?",
+            args: [item.quantity, item.productId],
+          });
+        }
+        await db.execute({
+          sql: "DELETE FROM orders WHERE id = ?",
+          args: [orderId],
+        });
+        return NextResponse.json(
+          { error: deductResult.error ?? "Wallet deduction failed" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Send order confirmation email (non-blocking; don't fail the request if email fails)
     const recipientEmail = session?.user?.email;
     if (recipientEmail && typeof recipientEmail === "string") {
@@ -193,7 +245,12 @@ export async function POST(request: Request) {
         items: itemSummaries,
         recipientName: delivery.recipientName,
         deliveryAddress: delivery.deliveryAddress,
-        paymentMethod: paymentMethod === "PAYSTACK" ? "Paystack" : "Cash on delivery",
+        paymentMethod:
+          paymentMethod === "PAYSTACK"
+            ? "Paystack"
+            : paymentMethod === "WALLET"
+              ? "Wallet"
+              : "Cash on delivery",
       }).then((r) => {
         if (!r.success) console.error("[Orders] Confirmation email failed:", r.error);
       });

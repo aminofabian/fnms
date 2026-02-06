@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
-import { Package, MapPin, Settings, ChevronRight, LogOut, User } from "lucide-react";
+import { Package, MapPin, Settings, ChevronRight, LogOut, User, Wallet } from "lucide-react";
 import { OrderStatusBadge } from "@/components/orders/order-status";
 import type { Order } from "@/types/order";
 
@@ -73,6 +73,13 @@ export default function AccountDashboardPage() {
         >
           <MapPin className="h-6 w-6 text-primary" />
           <span className="text-sm font-medium">Addresses</span>
+        </Link>
+        <Link
+          href="/account/wallet"
+          className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center hover:border-primary"
+        >
+          <Wallet className="h-6 w-6 text-primary" />
+          <span className="text-sm font-medium">Wallet</span>
         </Link>
         <Link
           href="/account/settings"

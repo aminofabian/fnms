@@ -17,12 +17,13 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const { step, setStep, delivery, paymentMethod, reset: resetCheckout } = useCheckoutStore();
-  const { items, clearCart } = useCartStore();
+  const { items, clearCart, getSubtotalCents } = useCartStore();
   const { selectedArea } = useServiceAreaStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paystackEmail, setPaystackEmail] = useState("");
   const [isFirstOrder, setIsFirstOrder] = useState(true);
+  const [walletBalanceCents, setWalletBalanceCents] = useState<number | null>(null);
 
   useEffect(() => {
     if (!session?.user) {
@@ -34,6 +35,20 @@ export default function CheckoutPage() {
       .then((data: { count?: number }) => setIsFirstOrder(Number(data?.count ?? 0) === 0))
       .catch(() => setIsFirstOrder(true));
   }, [session?.user]);
+
+  useEffect(() => {
+    if (!session?.user?.id || step !== "payment") {
+      setWalletBalanceCents(null);
+      return;
+    }
+    setWalletBalanceCents(null);
+    fetch("/api/wallet")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { balanceCents?: number } | null) =>
+        setWalletBalanceCents(data?.balanceCents ?? null)
+      )
+      .catch(() => setWalletBalanceCents(null));
+  }, [session?.user?.id, step]);
 
   if (items.length === 0) {
     return (
@@ -93,6 +108,13 @@ export default function CheckoutPage() {
 
       const { orderNumber, orderId } = (await res.json()) as { orderNumber: string; orderId: number };
 
+      if (paymentMethod === "WALLET") {
+        clearCart();
+        resetCheckout();
+        router.push(`/checkout/success?order=${orderNumber}`);
+        return;
+      }
+
       if (paymentMethod === "PAYSTACK") {
         const initRes = await fetch("/api/paystack/initialize", {
           method: "POST",
@@ -149,6 +171,12 @@ export default function CheckoutPage() {
           onPaystackEmailChange={setPaystackEmail}
           hasSessionEmail={Boolean(session?.user?.email)}
           isFirstOrder={isFirstOrder}
+          orderTotalCents={
+            selectedArea
+              ? getSubtotalCents() + (selectedArea.deliveryFeeCents ?? 0)
+              : 0
+          }
+          walletBalanceCents={session?.user ? walletBalanceCents : undefined}
         />
       )}
     </div>

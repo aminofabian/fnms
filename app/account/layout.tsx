@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { User, Package, MapPin, Settings, ArrowLeft, Heart } from "lucide-react";
+import { User, Package, MapPin, Settings, ArrowLeft, Heart, Wallet } from "lucide-react";
 
 export default function AccountLayout({
   children,
@@ -50,6 +50,13 @@ export default function AccountLayout({
               >
                 <Heart className="h-4 w-4" />
                 Wishlist
+              </Link>
+              <Link
+                href="/account/wallet"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
+              >
+                <Wallet className="h-4 w-4" />
+                Wallet
               </Link>
               <Link
                 href="/account/addresses"

@@ -10,6 +10,8 @@
     "db:init": "bun run scripts/init-db.ts",
     "db:migrate-areas": "bun run scripts/migrate-service-areas.ts",
     "db:migrate-orders": "bun run scripts/migrate-orders.ts",
+    "db:migrate-wallet": "bun run scripts/migrate-wallet.ts",
+    "db:migrate-wallet-top-ups": "bun run scripts/migrate-wallet-top-ups.ts",
     "db:seed-areas": "bun run scripts/seed-areas.ts",
     "db:seed-categories": "bun run scripts/seed-categories.ts",
     "db:seed": "bun run scripts/seed-areas.ts && bun run scripts/seed-categories.ts && bun run scripts/seed-products.ts",

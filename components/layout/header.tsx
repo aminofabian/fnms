@@ -154,24 +154,53 @@ function CartSummary() {
 }
 
 function WalletBal() {
+  const { data: session } = useSession();
+  const [balanceCents, setBalanceCents] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!session?.user?.id) {
+      setBalanceCents(null);
+      return;
+    }
+    fetch("/api/wallet")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { balanceCents?: number } | null) =>
+        setBalanceCents(data?.balanceCents ?? null)
+      )
+      .catch(() => setBalanceCents(null));
+  }, [session?.user?.id]);
+
+  if (!session?.user) return null;
+
+  const displayBalance =
+    balanceCents !== null
+      ? `KES ${((balanceCents ?? 0) / 100).toLocaleString()}`
+      : "—";
+
   return (
     <>
-      <div
-        className="flex flex-1 flex-col rounded-xl px-4 py-3 text-white shadow-sm lg:hidden"
+      <Link
+        href="/account/wallet"
+        aria-label="Wallet balance"
+        className="flex flex-1 flex-col rounded-xl px-4 py-3 text-white shadow-sm transition-opacity hover:opacity-95 active:scale-[0.99] lg:hidden"
         style={{ backgroundColor: "var(--nav-green)" }}
       >
         <span className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-white/90">
-          Wallet Bal
+          Wallet
         </span>
-        <span className="text-sm font-semibold">KES 0.00</span>
-      </div>
-      <div className="hidden flex-col rounded-lg border border-border bg-muted/50 px-3 py-2 text-left lg:flex">
+        <span className="text-sm font-semibold">{displayBalance}</span>
+      </Link>
+      <Link
+        href="/account/wallet"
+        aria-label="Wallet balance"
+        className="hidden flex-col rounded-lg border border-border bg-muted/50 px-3 py-2 text-left transition-colors hover:bg-muted lg:flex"
+      >
         <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           <Wallet className="h-3.5 w-3.5" aria-hidden />
-          Wallet Bal
+          Wallet
         </span>
-        <span className="text-xs font-semibold text-foreground">KES 0.00</span>
-      </div>
+        <span className="text-xs font-semibold text-foreground">{displayBalance}</span>
+      </Link>
     </>
   );
 }

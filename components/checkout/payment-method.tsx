@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { Banknote, ChevronLeft, Mail, Loader2 } from "lucide-react";
+import { Banknote, ChevronLeft, Mail, Loader2, Wallet } from "lucide-react";
 import { useCheckoutStore } from "@/stores/checkout-store";
 import type { PaymentMethod as PaymentMethodType } from "@/types/checkout";
 
@@ -27,6 +27,7 @@ function MpesaIcon({ className }: { className?: string }) {
 const paymentIcons = {
   CASH_ON_DELIVERY: Banknote,
   PAYSTACK: MpesaIcon,
+  WALLET: Wallet,
 } as const;
 
 interface PaymentMethodProps {
@@ -39,6 +40,10 @@ interface PaymentMethodProps {
   hasSessionEmail?: boolean;
   /** First-time customers must use M-Pesa (Paystack); cash on delivery only on subsequent orders */
   isFirstOrder?: boolean;
+  /** Order total in cents (subtotal + delivery). Used to enable/disable Wallet. */
+  orderTotalCents?: number;
+  /** Current wallet balance in cents. null = not loaded or not logged in. */
+  walletBalanceCents?: number | null;
 }
 
 export function PaymentMethod({
@@ -49,6 +54,8 @@ export function PaymentMethod({
   onPaystackEmailChange,
   hasSessionEmail = false,
   isFirstOrder = false,
+  orderTotalCents = 0,
+  walletBalanceCents = null,
 }: PaymentMethodProps) {
   const { paymentMethod, setPaymentMethod } = useCheckoutStore();
 
@@ -58,7 +65,13 @@ export function PaymentMethod({
     }
   }, [isFirstOrder, paymentMethod, setPaymentMethod]);
 
-  const allOptions: { value: PaymentMethodType; label: string; description: string }[] = [
+  const allOptions: {
+    value: PaymentMethodType;
+    label: string;
+    description: string;
+    disabled?: boolean;
+    disabledReason?: string;
+  }[] = [
     {
       value: "CASH_ON_DELIVERY",
       label: "Cash on Delivery",
@@ -69,15 +82,30 @@ export function PaymentMethod({
       label: "M-Pesa / Paystack",
       description: "Pay with M-Pesa, card, or bank",
     },
+    {
+      value: "WALLET",
+      label: "Wallet",
+      description:
+        walletBalanceCents === null
+          ? "Loading balance…"
+          : `Balance: KES ${((walletBalanceCents ?? 0) / 100).toLocaleString()}`,
+      disabled: walletBalanceCents !== null && (walletBalanceCents ?? 0) < orderTotalCents,
+      disabledReason:
+        walletBalanceCents !== null && (walletBalanceCents ?? 0) < orderTotalCents
+          ? "Insufficient balance (top up or use another method)"
+          : undefined,
+    },
   ];
 
   const options = isFirstOrder
     ? allOptions.filter((o) => o.value === "PAYSTACK")
-    : allOptions;
+    : allOptions.filter((o) => o.value !== "WALLET" || walletBalanceCents !== undefined);
 
   const isPlaceOrderDisabled =
     loading ||
-    (paymentMethod === "PAYSTACK" && !hasSessionEmail && !paystackEmail?.trim());
+    (paymentMethod === "PAYSTACK" && !hasSessionEmail && !paystackEmail?.trim()) ||
+    (paymentMethod === "WALLET" &&
+      (walletBalanceCents === null || (walletBalanceCents ?? 0) < orderTotalCents));
 
   return (
     <div className="space-y-6">
@@ -101,22 +129,27 @@ export function PaymentMethod({
           {options.map((opt) => {
             const Icon = paymentIcons[opt.value];
             const selected = paymentMethod === opt.value;
+            const isDisabled = opt.disabled === true;
             return (
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => setPaymentMethod(opt.value)}
-                className={`flex w-full cursor-pointer items-center gap-4 rounded-xl border-2 bg-card p-4 text-left shadow-sm transition-all hover:border-primary/40 hover:shadow-md ${
-                  selected
-                    ? "border-primary bg-primary/5 shadow-sm ring-2 ring-primary/20"
-                    : "border-border"
+                onClick={() => !isDisabled && setPaymentMethod(opt.value)}
+                disabled={isDisabled}
+                className={`flex w-full items-center gap-4 rounded-xl border-2 bg-card p-4 text-left shadow-sm transition-all ${
+                  isDisabled
+                    ? "cursor-not-allowed border-border opacity-60"
+                    : "cursor-pointer hover:border-primary/40 hover:shadow-md " +
+                      (selected
+                        ? "border-primary bg-primary/5 shadow-sm ring-2 ring-primary/20"
+                        : "border-border")
                 }`}
               >
                 <span
                   className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg overflow-hidden ${
                     opt.value === "PAYSTACK"
                       ? "bg-transparent"
-                      : selected
+                      : selected && !isDisabled
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground"
                   }`}
@@ -129,7 +162,11 @@ export function PaymentMethod({
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-foreground">{opt.label}</p>
-                  <p className="text-sm text-muted-foreground">{opt.description}</p>
+                  <p
+                    className={`text-sm ${opt.disabledReason ? "text-destructive" : "text-muted-foreground"}`}
+                  >
+                    {opt.disabledReason ?? opt.description}
+                  </p>
                 </div>
                 <span
                   className={`h-5 w-5 shrink-0 rounded-full border-2 ${
