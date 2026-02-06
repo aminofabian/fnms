@@ -30,7 +30,9 @@ export function WishlistButton({
     }
   }, [session, productId]);
 
-  async function toggleWishlist() {
+  async function toggleWishlist(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
     if (!session?.user) {
       router.push("/login");
       return;
@@ -69,6 +71,7 @@ export function WishlistButton({
   if (showLabel) {
     return (
       <button
+        type="button"
         onClick={toggleWishlist}
         disabled={loading}
         className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-all disabled:opacity-50 ${
@@ -87,6 +90,7 @@ export function WishlistButton({
 
   return (
     <button
+      type="button"
       onClick={toggleWishlist}
       disabled={loading}
       className={`${sizeClasses[size]} flex items-center justify-center rounded-full border transition-all disabled:opacity-50 ${

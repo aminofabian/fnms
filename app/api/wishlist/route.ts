@@ -27,7 +27,7 @@ export async function GET() {
     // Get wishlist with product details
     const { rows } = await db.execute({
       sql: `SELECT w.id, w.product_id, w.created_at,
-                   p.name, p.slug, p.price_cents, p.compare_at_price_cents,
+                   p.name, p.slug, p.price_cents, p.compare_at_cents,
                    p.stock_quantity, p.is_active,
                    (SELECT url FROM product_images WHERE product_id = p.id LIMIT 1) as image_url
             FROM wishlists w
@@ -47,7 +47,7 @@ export async function GET() {
           name: String(r.name),
           slug: String(r.slug),
           priceCents: Number(r.price_cents),
-          compareAtPriceCents: r.compare_at_price_cents ? Number(r.compare_at_price_cents) : null,
+          compareAtPriceCents: r.compare_at_cents ? Number(r.compare_at_cents) : null,
           stockQuantity: Number(r.stock_quantity),
           isActive: Boolean(r.is_active),
           imageUrl: r.image_url ? String(r.image_url) : null,

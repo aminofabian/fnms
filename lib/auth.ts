@@ -15,12 +15,13 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
 
         const { rows } = await db.execute({
-          sql: "SELECT id, email, name, role, password_hash FROM users WHERE email = ? LIMIT 1",
+          sql: "SELECT id, email, name, role, password_hash, COALESCE(blocked, 0) as blocked FROM users WHERE email = ? LIMIT 1",
           args: [credentials.email],
         });
 
         const row = rows[0];
         if (!row || typeof row.password_hash !== "string") return null;
+        if (Number(row.blocked) === 1) return null;
 
         const ok = await bcrypt.compare(credentials.password, row.password_hash);
         if (!ok) return null;
