@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Wallet, CheckCircle, Loader2 } from "lucide-react";
 
-export default function WalletTopUpSuccessPage() {
+function WalletTopUpSuccessContent() {
   const searchParams = useSearchParams();
   const reference = searchParams.get("reference");
   const [amountCents, setAmountCents] = useState<number | null>(null);
@@ -77,5 +77,24 @@ export default function WalletTopUpSuccessPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function WalletTopUpSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-md space-y-8">
+          <div className="rounded-xl border border-border bg-card p-8 text-center">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <WalletTopUpSuccessContent />
+    </Suspense>
   );
 }

@@ -17,6 +17,7 @@ import {
 import { useSession } from "next-auth/react";
 import { AreaSelector } from "@/components/service-areas/area-selector";
 import { useCartStore } from "@/stores/cart-store";
+import { TopUpModal } from "@/components/wallet/top-up-modal";
 
 function HeaderSearch() {
   const router = useRouter();
@@ -156,6 +157,7 @@ function CartSummary() {
 function WalletBal() {
   const { data: session } = useSession();
   const [balanceCents, setBalanceCents] = useState<number | null>(null);
+  const [topUpModalOpen, setTopUpModalOpen] = useState(false);
 
   useEffect(() => {
     if (!session?.user?.id) {
@@ -179,20 +181,22 @@ function WalletBal() {
 
   return (
     <>
-      <Link
-        href="/account/wallet"
-        aria-label="Wallet balance"
-        className="flex flex-1 flex-col rounded-xl px-4 py-3 text-white shadow-sm transition-opacity hover:opacity-95 active:scale-[0.99] lg:hidden"
+      <button
+        type="button"
+        onClick={() => setTopUpModalOpen(true)}
+        aria-label="Wallet balance - open to top up"
+        className="flex flex-1 flex-col rounded-xl px-4 py-3 text-left text-white shadow-sm transition-opacity hover:opacity-95 active:scale-[0.99] lg:hidden"
         style={{ backgroundColor: "var(--nav-green)" }}
       >
         <span className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-white/90">
           Wallet
         </span>
         <span className="text-sm font-semibold">{displayBalance}</span>
-      </Link>
-      <Link
-        href="/account/wallet"
-        aria-label="Wallet balance"
+      </button>
+      <button
+        type="button"
+        onClick={() => setTopUpModalOpen(true)}
+        aria-label="Wallet balance - open to top up"
         className="hidden flex-col rounded-lg border border-border bg-muted/50 px-3 py-2 text-left transition-colors hover:bg-muted lg:flex"
       >
         <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -200,7 +204,8 @@ function WalletBal() {
           Wallet
         </span>
         <span className="text-xs font-semibold text-foreground">{displayBalance}</span>
-      </Link>
+      </button>
+      <TopUpModal open={topUpModalOpen} onClose={() => setTopUpModalOpen(false)} />
     </>
   );
 }
