@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { refundForOrder } from "@/lib/wallet";
 
 export async function POST(
   request: Request,
@@ -53,6 +54,27 @@ export async function POST(
         sql: "UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?",
         args: [item.quantity, item.product_id],
       });
+    }
+
+    // Refund wallet if order was paid with WALLET
+    const paymentMethod = String(order.payment_method || "").toLowerCase();
+    const paymentStatus = String(order.payment_status || "").toLowerCase();
+    const userId = order.user_id;
+    if (
+      paymentMethod === "wallet" &&
+      paymentStatus === "paid" &&
+      userId != null
+    ) {
+      const refundResult = await refundForOrder(
+        String(userId),
+        Number(id),
+        Number(order.total_cents),
+        order.order_number ? String(order.order_number) : undefined
+      );
+      if (!refundResult.ok) {
+        console.error("Wallet refund failed on cancel:", refundResult.error);
+        // Don't fail the cancel - order is cancelled and stock restored; log for manual follow-up
+      }
     }
 
     return NextResponse.json({ success: true });

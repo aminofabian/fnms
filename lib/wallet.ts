@@ -133,3 +133,46 @@ export async function deductForOrder(
     return { ok: false, error: message };
   }
 }
+
+export interface RefundForOrderResult {
+  ok: boolean;
+  error?: string;
+}
+
+/**
+ * Credits the user's wallet when an order paid with WALLET is refunded/cancelled.
+ * Idempotent: if a refund transaction for this order already exists, returns success without crediting again.
+ */
+export async function refundForOrder(
+  userId: string,
+  orderId: number,
+  totalCents: number,
+  orderNumber?: string
+): Promise<RefundForOrderResult> {
+  const orderIdStr = String(orderId);
+
+  const { rows: existing } = await db.execute({
+    sql: `SELECT 1 FROM wallet_transactions
+          WHERE user_id = ? AND type = 'refund' AND reference_type = 'order' AND reference_id = ?
+          LIMIT 1`,
+    args: [userId, orderIdStr],
+  });
+
+  if (existing.length > 0) {
+    return { ok: true };
+  }
+
+  try {
+    await recordTransaction(userId, {
+      type: "refund",
+      amountCents: totalCents,
+      referenceType: "order",
+      referenceId: orderIdStr,
+      description: orderNumber ? `Refund for order ${orderNumber}` : `Refund for order #${orderId}`,
+    });
+    return { ok: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Refund failed";
+    return { ok: false, error: message };
+  }
+}

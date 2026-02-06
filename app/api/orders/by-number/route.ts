@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     }
 
     const { rows } = await db.execute({
-      sql: `SELECT id, order_number, total_cents, created_at
+      sql: `SELECT id, order_number, total_cents, payment_method, created_at
             FROM orders
             WHERE order_number = ?`,
       args: [orderNumber],
@@ -59,6 +59,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       orderNumber: String(order.order_number),
       totalCents: Number(order.total_cents) || 0,
+      paymentMethod: order.payment_method ? String(order.payment_method) : null,
       createdAt,
       estimatedDelivery,
       items,

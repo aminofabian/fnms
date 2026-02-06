@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, Plus, Loader2 } from "lucide-react";
+import { X, Plus, Loader2, Smartphone } from "lucide-react";
 
 const PRESET_AMOUNTS_CENTS = [500_00, 1_000_00, 2_000_00, 5_000_00, 10_000_00];
 const MIN_CENTS = 100_00;
 const MAX_CENTS = 500_000_00;
+const TILL_NUMBER = "3020127";
 
 interface TopUpModalProps {
   open: boolean;
@@ -162,6 +163,17 @@ export function TopUpModal({ open, onClose }: TopUpModalProps) {
           </div>
 
           {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
+
+          <div className="mt-6 border-t border-border pt-6">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Smartphone className="h-4 w-4" />
+              <span>Or top up via till</span>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Send the amount to till <strong className="font-mono text-foreground">{TILL_NUMBER}</strong>.
+              This will be processed manually — your balance will be updated once we confirm receipt.
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -171,6 +171,7 @@ export default function CheckoutPage() {
           onPaystackEmailChange={setPaystackEmail}
           hasSessionEmail={Boolean(session?.user?.email)}
           isFirstOrder={isFirstOrder}
+          hasSession={Boolean(session?.user)}
           orderTotalCents={
             selectedArea
               ? getSubtotalCents() + (selectedArea.deliveryFeeCents ?? 0)

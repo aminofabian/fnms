@@ -6,7 +6,7 @@ export interface DeliveryInfo {
   deliveryNotes?: string;
 }
 
-export type PaymentMethod = "PAYSTACK" | "CASH_ON_DELIVERY" | "WALLET";
+export type PaymentMethod = "PAYSTACK" | "CASH_ON_DELIVERY" | "WALLET" | "TILL";
 
 export interface CheckoutData extends DeliveryInfo {
   paymentMethod: PaymentMethod;

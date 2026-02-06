@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { Banknote, ChevronLeft, Mail, Loader2, Wallet } from "lucide-react";
+import { Banknote, ChevronLeft, Mail, Loader2, Wallet, Smartphone } from "lucide-react";
 import { useCheckoutStore } from "@/stores/checkout-store";
 import type { PaymentMethod as PaymentMethodType } from "@/types/checkout";
 
@@ -24,10 +24,13 @@ function MpesaIcon({ className }: { className?: string }) {
   );
 }
 
+const TILL_NUMBER = "3020127";
+
 const paymentIcons = {
   CASH_ON_DELIVERY: Banknote,
   PAYSTACK: MpesaIcon,
   WALLET: Wallet,
+  TILL: Smartphone,
 } as const;
 
 interface PaymentMethodProps {
@@ -38,8 +41,10 @@ interface PaymentMethodProps {
   paystackEmail?: string;
   onPaystackEmailChange?: (email: string) => void;
   hasSessionEmail?: boolean;
-  /** First-time customers must use M-Pesa (Paystack); cash on delivery only on subsequent orders */
+  /** First-time customers must use M-Pesa (Paystack) or till; cash on delivery only on subsequent orders */
   isFirstOrder?: boolean;
+  /** TILL requires login */
+  hasSession?: boolean;
   /** Order total in cents (subtotal + delivery). Used to enable/disable Wallet. */
   orderTotalCents?: number;
   /** Current wallet balance in cents. null = not loaded or not logged in. */
@@ -54,6 +59,7 @@ export function PaymentMethod({
   onPaystackEmailChange,
   hasSessionEmail = false,
   isFirstOrder = false,
+  hasSession = false,
   orderTotalCents = 0,
   walletBalanceCents = null,
 }: PaymentMethodProps) {
@@ -95,10 +101,17 @@ export function PaymentMethod({
           ? "Insufficient balance (top up or use another method)"
           : undefined,
     },
+    {
+      value: "TILL",
+      label: "Pay via Till",
+      description: `Send to till ${TILL_NUMBER}. This will be processed manually.`,
+    },
   ];
 
   const options = isFirstOrder
-    ? allOptions.filter((o) => o.value === "PAYSTACK")
+    ? allOptions.filter(
+        (o) => o.value === "PAYSTACK" || (o.value === "TILL" && hasSession)
+      )
     : allOptions.filter((o) => o.value !== "WALLET" || walletBalanceCents !== undefined);
 
   const isPlaceOrderDisabled =
@@ -111,7 +124,7 @@ export function PaymentMethod({
     <div className="space-y-6">
       {isFirstOrder && (
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-foreground">
-          <p className="font-medium text-foreground">First order? Use M-Pesa</p>
+          <p className="font-medium text-foreground">First order? Use M-Pesa or pay via till</p>
           <p className="mt-1 text-muted-foreground">
             Cash on delivery is available after your first completed order. Need help?{" "}
             <a

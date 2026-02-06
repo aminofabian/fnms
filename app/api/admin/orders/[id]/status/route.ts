@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { refundForOrder } from "@/lib/wallet";
 import type { OrderStatus } from "@/types/order";
 
 const VALID_STATUSES: OrderStatus[] = [
@@ -44,7 +45,9 @@ export async function PUT(
 
     const currentStatus = String(rows[0].status);
 
-    // If cancelling, restore stock (DB stores lowercase)
+    const order = rows[0];
+
+    // If cancelling, restore stock and refund wallet if paid with WALLET
     if (status === "CANCELLED" && currentStatus !== "cancelled") {
       const { rows: items } = await db.execute({
         sql: "SELECT product_id, quantity FROM order_items WHERE order_id = ?",
@@ -56,6 +59,25 @@ export async function PUT(
           sql: "UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?",
           args: [item.quantity, item.product_id],
         });
+      }
+
+      const paymentMethod = String(order.payment_method || "").toLowerCase();
+      const paymentStatus = String(order.payment_status || "").toLowerCase();
+      const userId = order.user_id;
+      if (
+        paymentMethod === "wallet" &&
+        paymentStatus === "paid" &&
+        userId != null
+      ) {
+        const refundResult = await refundForOrder(
+          String(userId),
+          Number(id),
+          Number(order.total_cents),
+          order.order_number ? String(order.order_number) : undefined
+        );
+        if (!refundResult.ok) {
+          console.error("Wallet refund failed on admin cancel:", refundResult.error);
+        }
       }
     }
 

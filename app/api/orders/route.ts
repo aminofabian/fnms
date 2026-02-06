@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
     const { delivery, paymentMethod, items } = body as {
       delivery: DeliveryInput;
-      paymentMethod: "PAYSTACK" | "CASH_ON_DELIVERY" | "WALLET";
+      paymentMethod: "PAYSTACK" | "CASH_ON_DELIVERY" | "WALLET" | "TILL";
       items: OrderItemInput[];
     };
 
@@ -123,11 +123,11 @@ export async function POST(request: Request) {
       }
     }
 
-    // First order or guest: only M-Pesa (Paystack); cash on delivery allowed on subsequent orders only
+    // First order or guest: only M-Pesa (Paystack) or Till; cash on delivery allowed on subsequent orders only
     if (paymentMethod === "CASH_ON_DELIVERY") {
       if (!session?.user?.id) {
         return NextResponse.json(
-          { error: "Cash on delivery is available from your second order. Please pay with M-Pesa for this order." },
+          { error: "Cash on delivery is available from your second order. Please pay with M-Pesa or till for this order." },
           { status: 400 }
         );
       }
@@ -138,10 +138,18 @@ export async function POST(request: Request) {
       const orderCount = Number((countRows[0] as unknown as { count: number }).count ?? 0);
       if (orderCount === 0) {
         return NextResponse.json(
-          { error: "Cash on delivery is available from your second order. Please pay with M-Pesa for your first order." },
+          { error: "Cash on delivery is available from your second order. Please pay with M-Pesa or till for your first order." },
           { status: 400 }
         );
       }
+    }
+
+    // TILL: available for all (including first order); payment processed manually
+    if (paymentMethod === "TILL" && !session?.user?.id) {
+      return NextResponse.json(
+        { error: "You must be logged in to pay via till." },
+        { status: 401 }
+      );
     }
 
     const totalCents = subtotalCents + deliveryFeeCents;
@@ -169,7 +177,7 @@ export async function POST(request: Request) {
         paymentMethod,
         paymentMethod === "WALLET"
           ? "paid"
-          : paymentMethod === "CASH_ON_DELIVERY"
+          : paymentMethod === "CASH_ON_DELIVERY" || paymentMethod === "TILL"
             ? "pending"
             : "awaiting", // Paystack: awaiting until webhook confirms
       ],

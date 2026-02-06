@@ -2,12 +2,15 @@
 
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle, Package, Clock, ExternalLink } from "lucide-react";
+import { CheckCircle, Package, Clock, ExternalLink, Smartphone } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
+
+const TILL_NUMBER = "3020127";
 
 interface OrderSummary {
   orderNumber: string;
   totalCents: number;
+  paymentMethod?: string | null;
   createdAt: string;
   estimatedDelivery: string;
   items: { name: string; quantity: number; unitPriceCents: number }[];
@@ -130,6 +133,20 @@ function SuccessContent() {
               </span>
             </div>
           </div>
+
+          {order.paymentMethod?.toUpperCase() === "TILL" && (
+            <div className="mt-6 rounded-xl border border-primary/30 bg-primary/5 p-4">
+              <div className="flex items-center gap-2 font-medium text-foreground">
+                <Smartphone className="h-5 w-5 text-primary" />
+                <span>Pay via till</span>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Send <strong className="text-foreground">KES {(order.totalCents / 100).toLocaleString()}</strong> to till{" "}
+                <strong className="font-mono text-foreground">{TILL_NUMBER}</strong>.
+                This will be processed manually — we&apos;ll confirm once payment is received.
+              </p>
+            </div>
+          )}
 
           <div className="mt-6 rounded-lg border border-border bg-muted/30 p-4">
             <p className="mb-2 text-sm font-medium text-foreground">
