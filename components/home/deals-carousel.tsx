@@ -47,11 +47,8 @@ function DealCard({ product, imageUrl, price, comparePrice, discount }: DealCard
   }
 
   return (
-    <Link
-      href={`/products/${product.slug}`}
-      className="group relative flex w-36 shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-card shadow-md ring-1 ring-black/5 transition hover:shadow-lg hover:ring-primary/20 sm:w-40"
-    >
-      <span className="absolute left-2 top-2 z-10 rounded-full bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground shadow">
+    <div className="group relative flex w-36 shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-card shadow-md ring-1 ring-black/5 transition hover:shadow-lg hover:ring-primary/20 sm:w-40">
+      <span className="pointer-events-none absolute left-2 top-2 z-10 rounded-full bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground shadow">
         -{discount}%
       </span>
       <div
@@ -63,25 +60,40 @@ function DealCard({ product, imageUrl, price, comparePrice, discount }: DealCard
       >
         <WishlistButton productId={product.id} size="sm" />
       </div>
-      <div className="relative aspect-square overflow-hidden bg-muted/30">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={product.name}
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground/40">
-            <span className="text-3xl" aria-hidden>🛒</span>
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <Link
+          href={`/products/${product.slug}`}
+          scroll={false}
+          className="flex min-h-0 flex-1 flex-col outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        >
+          <div className="relative aspect-square overflow-hidden bg-muted/30">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={product.name}
+                className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-muted-foreground/40">
+                <span className="text-3xl" aria-hidden>🛒</span>
+              </div>
+            )}
           </div>
-        )}
-        {/* Hover overlay: Add to cart */}
+          <div className="flex flex-1 flex-col p-3 pb-2">
+            <p className="line-clamp-2 text-xs font-medium text-foreground sm:text-sm">
+              {product.name}
+            </p>
+            <p className="mt-2 text-sm font-bold text-primary">
+              KES {price.toLocaleString()}
+            </p>
+            <p className="text-xs text-muted-foreground line-through">
+              KES {comparePrice.toLocaleString()}
+            </p>
+          </div>
+        </Link>
         <div
-          className="absolute inset-0 flex items-center justify-center gap-2 bg-black/30 opacity-0 transition-opacity group-hover:opacity-100"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
+          className="pointer-events-none absolute inset-x-0 top-0 z-[1] flex aspect-square items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100"
+          aria-hidden
         >
           <button
             type="button"
@@ -94,27 +106,18 @@ function DealCard({ product, imageUrl, price, comparePrice, discount }: DealCard
           </button>
         </div>
       </div>
-      <div className="flex flex-1 flex-col p-3">
-        <p className="line-clamp-2 text-xs font-medium text-foreground sm:text-sm">
-          {product.name}
-        </p>
-        <p className="mt-2 text-sm font-bold text-primary">
-          KES {price.toLocaleString()}
-        </p>
-        <p className="text-xs text-muted-foreground line-through">
-          KES {comparePrice.toLocaleString()}
-        </p>
+      <div className="px-3 pb-3">
         <button
           type="button"
           onClick={handleAddToCart}
           disabled={!inStock}
-          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ShoppingCart className="h-3.5 w-3.5" />
           {inStock ? "Add to cart" : "Out of stock"}
         </button>
       </div>
-    </Link>
+    </div>
   );
 }
 
